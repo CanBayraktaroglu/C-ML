@@ -6,10 +6,10 @@ project(knn)
 include_directories(./)
 
 # Create an executable for test
-add_executable(main ./main.c)
+add_executable(knn ./knn.c)
 
 # Link the libraries
-target_link_libraries(main m)
+target_link_libraries(knn m)
 
 # Link test against the libraries
-target_include_directories(main PUBLIC ./)
+target_include_directories(knn PUBLIC ./)
