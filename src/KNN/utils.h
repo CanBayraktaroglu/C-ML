@@ -291,12 +291,12 @@ void swap(Vector* v, int i, int j){
     *vector_at(v, j) = tmp;
 };
 
-int partition_x(Vector* v, int low, int high){
+/* int partition_x(Vector* v, int low, int high){
     Point* pivot = vector_at(v, high);
     int i = low - 1;
 
     for (int j = low; j <= high; j++){
-        if (point_get_x(vector_at(v, j)) < point_get_x(pivot)){ 
+        if (vector_at(v, j)->point[0] < pivot->point[0]){ 
             i++;
             swap(v, i, j);
         }
@@ -304,14 +304,14 @@ int partition_x(Vector* v, int low, int high){
     swap(v, i+1, high);
     return i + 1;
 
-};
+}; */
 
-int partition_y(Vector* v, int low, int high){
+/* int partition_y(Vector* v, int low, int high){
     Point* pivot = vector_at(v, high);
     int i = low - 1;
 
     for (int j = low; j <= high; j++){
-        if (point_get_y(vector_at(v, j)) < point_get_y(pivot)){ 
+        if (vector_at(v, j)->point[1] < pivot->point[1]){ 
             i++;
             swap(v, i, j);
         }
@@ -319,9 +319,34 @@ int partition_y(Vector* v, int low, int high){
     swap(v, i+1, high);
     return i + 1;
 
+}; */
+
+int partition_(Vector* v, int low, int high, int dim){
+    Point* pivot = vector_at(v, high);//choose_pivot(v);
+    int i = low;
+    //printf("low, high: %i,%i,%i\n", low, high, dim);
+
+    for (int j = low; j < high; j++){
+        if (vector_at(v, j)->point[dim] <= pivot->point[dim]){ 
+            //printf("Swapping %i and %i\n", i, j);
+            swap(v, i, j);
+            i++;
+        }
+    }
+    swap(v, i, high);
+    return i;
 };
 
-void qsort_x(Vector* v, int low, int high){
+void qsort_(Vector* v, int low, int high, int dim){
+    if (low < high){
+        int pivot_idx = partition_(v, low, high, dim);
+        qsort_(v, low, pivot_idx - 1, dim);
+        qsort_(v, pivot_idx + 1, high, dim);
+    }
+};
+
+
+/* void qsort_x(Vector* v, int low, int high){
     if (low < high){
         int pivot_idx = partition_x(v, low, high);
         qsort_x(v, low, pivot_idx - 1);
@@ -335,21 +360,6 @@ void qsort_y(Vector* v, int low, int high){
         qsort_y(v, low, pivot_idx - 1);
         qsort_y(v, pivot_idx + 1, high);
     }
-};
+}; */
 
-void readCSV(const char *filePath) {
-    FILE *file = fopen(filePath, "r");
-    if (file == NULL) {
-        perror("Error opening file");
-        return;
-    }
-
-    char buffer[1024];
-    while (fgets(buffer, sizeof(buffer), file)) {
-        // Print each line of the CSV file
-        printf("%s", buffer);
-    }
-
-    fclose(file);
-}
 #endif

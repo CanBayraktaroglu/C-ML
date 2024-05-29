@@ -25,6 +25,7 @@ Vector* vector_create(unsigned short int initial_capacity) {
 Point* vector_at(Vector* vec, unsigned short int index) {
     if (index < 0 || index >= vec->size) {
         printf("Index out of bounds for idx: %hu\n", index);
+        printf("Size: %hu\n", vec->size);
         exit(1);
     }
     return &vec->data[index];

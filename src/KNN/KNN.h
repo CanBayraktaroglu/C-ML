@@ -127,6 +127,8 @@ Metrics KNN_evaluate(KNN* knn){
 
     for (unsigned short int i = 0; i < N; i++){
         Point* p = vector_at(knn->test_dataset->vec, i);
+		//printf("Predicting class for point %hu\n", i);
+		//printf("Point dim: %hhu\n", p->dim);
         int predicted_class = KNN_predict(knn, p);
         if (predicted_class == p->class){
             correct[predicted_class]++;
@@ -140,9 +142,9 @@ Metrics KNN_evaluate(KNN* knn){
 	metrics.num_classes = num_classes;
     metrics.accuracy = malloc(num_classes * sizeof(float));
     metrics.precision = malloc(num_classes * sizeof(float));
-    for (unsigned short int i = 0; i < num_classes; i++){
-        metrics.accuracy[i] = (float)correct[i] / (float)N;
-        metrics.precision[i] = (float)true_positives[i] / (true_positives[i] + false_positives[i]);
+    for (unsigned short int j = 0; j < num_classes; j++){
+        metrics.accuracy[j] = (float)correct[j] / (float)N;
+        metrics.precision[j] = (float)true_positives[j] / (true_positives[j] + false_positives[j]);
     }
 
     free(true_positives);

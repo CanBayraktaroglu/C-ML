@@ -44,10 +44,10 @@ void k_d_tree_node_destroy(KDTreeNode* node){
 KDTreeNode* k_d_tree_build(Vector* points, unsigned short int depth){
     if (points->size == 0) return NULL;
 
-    unsigned char axis = (unsigned char)(depth % 2); //alternate between axis
+    unsigned char axis = (unsigned char)depth % points->data->dim; //alternate between axis
 
-    if (!axis) qsort_x(points, 0, points->size - 1);
-    else qsort_y(points, 0, points->size - 1);
+    //printf("Sorting points along axis: %i\n", (int)axis);
+    qsort_(points, 0, points->size - 1, (int)axis);
 
     //Find the median point along the current axis#
     unsigned short median_idx = points->size / 2;
@@ -90,8 +90,11 @@ void k_d_tree_print(KDTreeNode* node, unsigned short int depth){
     for (int i = 0; i < depth; i++) {
         printf("   ");
     }
+    for (int i = 0; i < node->p->dim; i++){
+        printf("%.3f ", node->p->point[i]);
+    }
 
-    printf("(%.3f, %.3f, %hhu)\n", point_get_x(node->p), point_get_y(node->p), node->class);
+    printf("%hhu\n", node->class);
 
     k_d_tree_print(node->left, depth + 1);
     k_d_tree_print(node->right, depth + 1);
@@ -103,7 +106,7 @@ void k_d_tree_insert(KDTreeNode** root, Point* p, unsigned char depth){
         return;
     }
 
-    unsigned char axis = depth % 2;
+    unsigned char axis = depth % p->dim;
 
     if (p->point[axis] < (*root)->p->point[axis]){
         if ((*root)->left == NULL) (*root)->left = k_d_tree_node_create(p);
@@ -172,7 +175,7 @@ KDTreeNode* k_d_tree_get_nn(KDTreeNode* root, Point* p, KDTreeNode** nns, unsign
 void k_d_tree_search(KDTreeNode* root, Point* target, KDTreeNode** nns, unsigned char* num_nns, unsigned char depth, unsigned char k){
     if (root == NULL) return;
 
-    unsigned char axis = depth % 2;
+    unsigned char axis = depth % root->p->dim;
 
     // Calc l2 dist between point and target
     float dist = point_calc_dist(root->p, target);
@@ -208,7 +211,7 @@ void k_d_tree_get_nns(KDTreeNode* root, Point* target, unsigned short int k, Max
     HeapNode hn = { dist, root};
     insert_max_heap(heap, &hn);
 
-    unsigned char axis = depth % 2;
+    unsigned char axis = depth % root->p->dim;
     KDTreeNode* nextBranch = NULL;
     KDTreeNode* otherBranch = NULL;
 

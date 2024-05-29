@@ -65,8 +65,9 @@ void dataset_populate(Dataset* dataset){
 		random_y *= max_y;
 		
 		// Create point
-		Point* p = point_create();
-		point_set_point(p, &random_x, &random_y);
+		Point* p = point_create(2);
+		float point[2] = {random_x, random_y};
+		point_set_point(p, point);
 
 		// Set color
 		Color* color = color_create();
@@ -96,11 +97,10 @@ void dataset_read_csv(Dataset* dataset, const char* filename, unsigned short int
 		printf("Error opening file\n");
 		return;
 	}
-		
-	
+
 	unsigned char class;
-	Point* points = (Point*) malloc(sizeof(Point));
-	float vals[4];
+	Point points[N];
+	float* vals;
 	unsigned char num_classes = 0;
 	
 	char buffer[1024];
@@ -110,16 +110,13 @@ void dataset_read_csv(Dataset* dataset, const char* filename, unsigned short int
 
 	printf("Reading file\n");
 	while (fgets(buffer, 1024, file)){
-		//printf("Reading line %lu\n", i);
 		char *token = strtok(buffer, ",");
+		
 		if (i){
 			j %= num_features;
 		}
-
-		//printf("i: %lu\n", i);
 		
 		while(token){
-			//printf("j: %lu\n",j);
 			if (!i){
 				num_features++;
 			}
@@ -137,25 +134,34 @@ void dataset_read_csv(Dataset* dataset, const char* filename, unsigned short int
 
 			}
 			j++;
-			
 			token = strtok(NULL, ",");
 		}
 
-		points = realloc(points, (i + 1) * sizeof(Point));
-		Point* p = point_create();
-
-		// Read only the first two features -> 2D
-		point_set_point(p, vals, vals + 1);
-		point_set_class(p, class);
-		points[i] = *p; 
-
-		// Count the number of classes
-		if (class > num_classes){
-			num_classes = class;
+		if (!i){
+			vals = (float*) malloc((num_features - 1) * sizeof(float));
 		}
+		else {
+			//printf("%lu \n", i);
+			//points = (Point*)realloc(points, (i+1) * sizeof(Point));
+			Point* p = point_create((unsigned char)(num_features - 1));
 
-		free(p);
+			point_set_point(p, vals);
+			point_set_class(p, class);
+			memcpy(points + i - 1, p, sizeof(Point));
 
+			// Free the point
+			point_destroy(&p);
+			//free(p->point);
+			//p->point = NULL;
+			/* free(p);
+			p = NULL; */
+
+			// Count the number of classes
+			if (i && class > num_classes){
+				num_classes = class;
+			}
+		}
+		
 		i++;
 
 	}	
@@ -163,15 +169,19 @@ void dataset_read_csv(Dataset* dataset, const char* filename, unsigned short int
 	// Set the actual number of classes
 	dataset->num_classes = ++num_classes;
 
-	dataset_initialize(dataset, N);
+	dataset_initialize(dataset, N - 1);
 	
 	// Push the points to the dataset
-	for (i = 0; i < N; i++){
+	for (i = 0; i < N - 1; i++){
+		//printf("Pushing point %lu\n", i);
+		//printf("Point dim: %hhu\n", points[i].dim);
 		vector_push_back(dataset->vec, points + i);
 	}
-	
-	free(points);
-	points = NULL;
+
+	//printf("Dataset size: %hu\n", dataset->vec->size);
+
+	free(vals);
+	vals = NULL;
 	fclose(file);
 };
 
@@ -205,8 +215,8 @@ void dataset_split(Dataset* dataset, Dataset* train, Dataset* test, float ratio)
 		vector_push_back(train->vec, vector_at(dataset->vec, i));
 	}
 	
-	for (unsigned short int i = train_size; i < N; i++){
-		vector_push_back(test->vec, vector_at(dataset->vec, i));
+	for (unsigned short int j = train_size; j < N; j++){
+		vector_push_back(test->vec, vector_at(dataset->vec, j));
 	}
 	
 	train->num_classes = dataset->num_classes;

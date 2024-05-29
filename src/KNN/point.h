@@ -11,19 +11,28 @@
 // define Functions
 
 typedef struct{
-	float point[2];
+	unsigned char dim;
+	float* point;
 	Color* color;
 	unsigned char class;
 }Point;
-
+/* 
 void point_set_point(Point* p, float* x, float* y){
 
 	p->point[0] = *x;
 	p->point[1] = *y;
-};
+}; */
 
 float* point_get_point(Point* p){
 	return p->point;
+};
+
+void point_set_dim(Point* p, unsigned char dim){
+	p->dim = dim;
+};
+
+void point_set_point(Point* p, float* point){
+	memcpy(p->point, point, sizeof(float) * p->dim);
 };
 
 void point_set_color(Point* p, Color* color){
@@ -44,40 +53,50 @@ Color* point_get_color(Point* p){
 	return p->color;
 };
 
-Point* point_create(){
+Point* point_create(unsigned char dim){
 	Point* p = (Point*) malloc(sizeof(Point));
 	p->class = 0;
+	p->dim = dim;
+	p->point = (float*) malloc(sizeof(float) * (unsigned long)dim);
 	p->color = NULL;
 	return p;
 
 };
 
-float point_get_x(Point* p){
-	return p->point[0];
-};
-
-float point_get_y(Point* p){
-	return p->point[1];
+void point_set_feature_at(Point* p, unsigned char index, float value){
+	if (index >= p->dim){
+		printf("Error: Index out of bounds\n");
+		exit(1);
+	}
+	p->point[index] = value;
 };
 
 float point_calc_dist(Point* p, Point* query){
-	float x_p = point_get_x(p);
-	float x_q = point_get_x(query);
-	float y_p = point_get_y(p);
-	float y_q = point_get_y(query); 
-	
-	float dist = powf(x_p - x_q, 2.0f) + powf(y_p - y_q, 2.0f);
-	dist = sqrtf(dist);
 
-	return dist;
+	if (p->dim != query->dim){
+		printf("Error: Dimensions do not match\n");
+		printf("p->dim: %hhu\n", p->dim);
+		printf("query->dim: %hhu\n", query->dim);
+		exit(1);
+	}
+
+	float total = 0.0f;
+
+	for (unsigned char i = 0; i < p->dim; i++){
+		total += powf(p->point[i] - query->point[i], 2.0f);
+	}
+	
+	total = sqrtf(total);
+
+	return total;
 };
 
 void point_destroy(Point** p){
 	if (*p == NULL) return;
-	//printf("Destroying point\n");
 	color_destroy((*p)->color);
+	free((*p)->point);
+	(*p)->point = NULL;
 	free(*p);	
-	//printf("Point destroyed\n");
 	*p = NULL;
 };
 
