@@ -13,7 +13,7 @@
 
 typedef struct {
     unsigned short int num_classes;
-    float* accuracy;
+    float accuracy;
     float* precision;
 } Metrics;
 
@@ -41,17 +41,23 @@ typedef struct HashTable {
 } HashTable;
 
 void print_metrics(Metrics* metrics){
+    printf("Accuracy: %f\n", metrics->accuracy); 
     for (unsigned short int i = 0; i < metrics->num_classes; i++){
-        printf("Class %hu\n", i);
-        printf("Accuracy: %f\n", *(metrics->accuracy + i));
+        printf("Class %hu\n", i);    
         printf("Precision: %f\n", *(metrics->precision + i));
     }
 };
 
+Metrics* create_metrics(unsigned short int num_classes){
+    Metrics* metrics = (Metrics*)malloc(sizeof(Metrics));
+    metrics->num_classes = num_classes;
+    metrics->accuracy = 0.0;
+    metrics->precision = (float*)malloc(sizeof(float) * num_classes);
+    return metrics;
+};
+
 void metrics_destroy(Metrics* metrics){
-    free(metrics->accuracy);
     free(metrics->precision);
-    metrics->accuracy = NULL;
     metrics->precision = NULL;
 };
 

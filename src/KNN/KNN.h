@@ -121,7 +121,7 @@ void KNN_destroy(KNN* knn){
 	knn = NULL;
 };
 
-Metrics KNN_evaluate(KNN* knn){
+Metrics* KNN_evaluate(KNN* knn){
     if (knn->test_dataset == NULL){
         printf("Test dataset does not exist.\n");
         exit(1);
@@ -145,14 +145,13 @@ Metrics KNN_evaluate(KNN* knn){
         }
     }
 
-    Metrics metrics;
-	metrics.num_classes = num_classes;
-    metrics.accuracy = malloc(num_classes * sizeof(float));
-    metrics.precision = malloc(num_classes * sizeof(float));
+    Metrics* metrics = create_metrics(num_classes);
     for (unsigned short int j = 0; j < num_classes; j++){
-        metrics.accuracy[j] = (float)correct[j] / (float)N;
-        metrics.precision[j] = (float)true_positives[j] / (true_positives[j] + false_positives[j]);
+        metrics->accuracy += (float)correct[j];
+        metrics->precision[j] = (float)true_positives[j] / (true_positives[j] + false_positives[j]);
     }
+
+	metrics->accuracy /= (float)N;
 
     free(true_positives);
     free(false_positives);

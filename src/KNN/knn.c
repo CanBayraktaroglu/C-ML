@@ -19,13 +19,13 @@ int main(){
 	Dataset* train_dataset = dataset_create();
 	Dataset* test_dataset = dataset_create();
 
-	float split_ratio = 0.9;
+	float split_ratio = 0.6;
 
 	dataset_split(dataset, train_dataset, test_dataset, split_ratio);
 
 	KNN_set_datasets(knn, train_dataset, test_dataset);
 
-	unsigned char k = 10;
+	unsigned char k = 5;
 	unsigned char c;
 
 	KNN_set_K(knn, k);
@@ -33,17 +33,17 @@ int main(){
 	// fit on the dataset
 	KNN_fit(knn);
 
-	k_d_tree_print(knn->root_node, 0);
+	//k_d_tree_print(knn->root_node, 0);
 
-	printf("---------------------------------------\n");
+	//printf("---------------------------------------\n");
 
 	// Evaluate the model
-	Metrics metrics = KNN_evaluate(knn);
-	print_metrics(&metrics);
+	Metrics* metrics = KNN_evaluate(knn);
+	print_metrics(metrics);
 	
 	//Free memory
 	KNN_destroy(knn);
-	metrics_destroy(&metrics);
+	metrics_destroy(metrics);
 	
 	return 0;
 
