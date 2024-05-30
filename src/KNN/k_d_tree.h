@@ -34,7 +34,7 @@ void k_d_tree_node_destroy(KDTreeNode* node){
     k_d_tree_node_destroy(node->left);
     k_d_tree_node_destroy(node->right);
     
-    //point_destroy(&node->p);
+    point_destroy(&node->p);
     free(node->p);
     node->p = NULL;
     free(node);
@@ -215,6 +215,7 @@ void k_d_tree_get_nns(KDTreeNode* root, Point* target, unsigned short int k, Max
     KDTreeNode* nextBranch = NULL;
     KDTreeNode* otherBranch = NULL;
 
+    //printf("Target: %f, Root: %f\n", target->point[axis], root->p->point[axis]);
     if (target->point[axis] < root->p->point[axis]) {
         nextBranch = root->left;
         otherBranch = root->right;

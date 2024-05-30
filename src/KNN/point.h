@@ -32,6 +32,12 @@ void point_set_dim(Point* p, unsigned char dim){
 };
 
 void point_set_point(Point* p, float* point){
+	if (p->point == NULL){
+		p->point = (float*) malloc(sizeof(float) * (unsigned long)p->dim);		
+	}
+	/* for (unsigned char i = 0; i < p->dim; i++){
+		p->point[i] = point[i];
+	} */
 	memcpy(p->point, point, sizeof(float) * p->dim);
 };
 
@@ -57,7 +63,7 @@ Point* point_create(unsigned char dim){
 	Point* p = (Point*) malloc(sizeof(Point));
 	p->class = 0;
 	p->dim = dim;
-	p->point = (float*) malloc(sizeof(float) * (unsigned long)dim);
+	p->point = NULL;
 	p->color = NULL;
 	return p;
 

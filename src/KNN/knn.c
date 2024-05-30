@@ -10,10 +10,7 @@ int main(){
 	//Instantiate a KNN 
 	KNN* knn = KNN_create();
 
-	unsigned short int N;
-	printf("Enter the number of Points:\n");
-	scanf("%hu", &N);
-	dataset_read_csv(dataset, "../src/KNN/data/iris.csv",N);
+	dataset_read_csv(dataset, "../src/KNN/data/iris.csv");
 		
 	// Set the dataset
 	KNN_set_dataset(knn, dataset);
@@ -22,19 +19,15 @@ int main(){
 	Dataset* train_dataset = dataset_create();
 	Dataset* test_dataset = dataset_create();
 
-	float split_ratio;
-	printf("Set Split Ratio: \n");
-	scanf("%f", &split_ratio);
+	float split_ratio = 0.9;
 
 	dataset_split(dataset, train_dataset, test_dataset, split_ratio);
 
 	KNN_set_datasets(knn, train_dataset, test_dataset);
 
-	unsigned char k;
+	unsigned char k = 10;
 	unsigned char c;
 
-	printf("Give k: \n");
-	scanf("%hhu", &k);
 	KNN_set_K(knn, k);
 
 	// fit on the dataset
