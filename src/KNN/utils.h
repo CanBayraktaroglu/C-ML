@@ -59,6 +59,8 @@ Metrics* create_metrics(unsigned short int num_classes){
 void metrics_destroy(Metrics* metrics){
     free(metrics->precision);
     metrics->precision = NULL;
+    free(metrics);
+    metrics = NULL;
 };
 
 HashEntry* create_entry(void *key, void *value) {
