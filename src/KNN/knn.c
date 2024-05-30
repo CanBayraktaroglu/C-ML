@@ -10,7 +10,7 @@ int main(){
 
 	// Configs
 	KNN_Config config;
-	load_yaml("../src/KNN/configs/configs.yaml", &config);
+	load_yaml_knn("../src/KNN/configs/configs.yaml", &config);
 
 	//Run KNN
 	KNN_run(knn, &config);	

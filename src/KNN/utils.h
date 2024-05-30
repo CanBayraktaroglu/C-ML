@@ -302,7 +302,7 @@ void qsort_(Vector* v, int low, int high, int dim){
     }
 };
 
-void load_yaml(const char *filepath, KNN_Config *config) {
+void load_yaml_knn(const char *filepath, KNN_Config *config) {
     FILE *file = fopen(filepath, "rb");
     if (!file) {
         fprintf(stderr, "Could not open file: %s\n", filepath);
