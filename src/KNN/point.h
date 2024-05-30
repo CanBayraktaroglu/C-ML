@@ -92,6 +92,7 @@ float point_calc_dist(Point* p, Point* query){
 
 void point_destroy(Point** p){
 	if (*p == NULL) return;
+	
 	color_destroy((*p)->color);
 	free((*p)->point);
 	(*p)->point = NULL;

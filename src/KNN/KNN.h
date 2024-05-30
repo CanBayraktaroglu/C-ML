@@ -160,11 +160,17 @@ Metrics* KNN_evaluate(KNN* knn){
     return metrics;
 };
 
-void KNN_run(KNN* knn, float split_ratio, unsigned char k){
+void KNN_run(KNN* knn, KNN_Config* config){
+	// Load configs
+	unsigned char k = config->k;
+	float split_ratio = config->split_ratio;
+	char data_path[256];
+	strcpy(data_path, config->data_path);
+
 	// Instantiate a dataset
 	Dataset* dataset = dataset_create();
 
-	dataset_read_csv(dataset, "../src/KNN/data/iris.csv");
+	dataset_read_csv(dataset, data_path);
 		
 	// Set the dataset
 	KNN_set_dataset(knn, dataset);
@@ -176,8 +182,6 @@ void KNN_run(KNN* knn, float split_ratio, unsigned char k){
 	dataset_split(dataset, train_dataset, test_dataset, split_ratio);
 
 	KNN_set_datasets(knn, train_dataset, test_dataset);
-
-	unsigned char c;
 
 	KNN_set_K(knn, k);
 

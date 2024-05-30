@@ -9,11 +9,11 @@ int main(){
 	KNN* knn = KNN_create();
 
 	// Configs
-	float split_ratio = 0.6;
-	unsigned char k = 3;
+	KNN_Config config;
+	load_yaml("../src/KNN/configs/configs.yaml", &config);
 
 	//Run KNN
-	KNN_run(knn, split_ratio, k);	
+	KNN_run(knn, &config);	
 	
 	return 0;
 

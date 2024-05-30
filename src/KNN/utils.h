@@ -8,8 +8,15 @@
 #include "time.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "yaml.h"
 
 #define TABLE_SIZE 10
+
+typedef struct {
+    float split_ratio;
+    unsigned char k;
+    char data_path[256];
+} KNN_Config;
 
 typedef struct {
     unsigned short int num_classes;
@@ -260,32 +267,6 @@ void insert_max_heap(MaxHeap* heap, HeapNode* hn){
     }
 };
 
-signed char compareX(const void* a, const void* b){
-    Point* pt1 = (Point*) a;
-    Point* pt2 =  (Point*) b;
-
-    if (*(pt1->point) < *(pt2->point)) return -1;
-    if (*(pt1->point) > *(pt2->point)) return 1;
-
-    return 0;
-
-};
-
-signed char compareY(const void* a, const void* b){
-    Point* pt1 = (Point*) a;
-    Point* pt2 = (Point*) b;
-
-    float y1 = *(pt1->point+1);
-    float y2 = *(pt2->point+1);
-
-    if (y1 < y2) return -1;
-    if (y1 > y2) return 1;
-
-    return 0;
-
-
-};
-
 Point* choose_pivot(Vector* v){
     Point* p = v->data + (unsigned short)(v->size / 2);
     return p;
@@ -296,36 +277,6 @@ void swap(Vector* v, int i, int j){
     *vector_at(v, i) = *vector_at(v, j);
     *vector_at(v, j) = tmp;
 };
-
-/* int partition_x(Vector* v, int low, int high){
-    Point* pivot = vector_at(v, high);
-    int i = low - 1;
-
-    for (int j = low; j <= high; j++){
-        if (vector_at(v, j)->point[0] < pivot->point[0]){ 
-            i++;
-            swap(v, i, j);
-        }
-    }
-    swap(v, i+1, high);
-    return i + 1;
-
-}; */
-
-/* int partition_y(Vector* v, int low, int high){
-    Point* pivot = vector_at(v, high);
-    int i = low - 1;
-
-    for (int j = low; j <= high; j++){
-        if (vector_at(v, j)->point[1] < pivot->point[1]){ 
-            i++;
-            swap(v, i, j);
-        }
-    }
-    swap(v, i+1, high);
-    return i + 1;
-
-}; */
 
 int partition_(Vector* v, int low, int high, int dim){
     Point* pivot = vector_at(v, high);//choose_pivot(v);
@@ -351,21 +302,72 @@ void qsort_(Vector* v, int low, int high, int dim){
     }
 };
 
-
-/* void qsort_x(Vector* v, int low, int high){
-    if (low < high){
-        int pivot_idx = partition_x(v, low, high);
-        qsort_x(v, low, pivot_idx - 1);
-        qsort_x(v, pivot_idx + 1, high);
+void load_yaml(const char *filepath, KNN_Config *config) {
+    FILE *file = fopen(filepath, "rb");
+    if (!file) {
+        fprintf(stderr, "Could not open file: %s\n", filepath);
+        return;
     }
+
+    yaml_parser_t parser;
+    yaml_event_t event;
+    int done = 0;
+
+    if (!yaml_parser_initialize(&parser)) {
+        fputs("Failed to initialize parser!\n", stderr);
+        fclose(file);
+        return;
+    }
+
+    yaml_parser_set_input_file(&parser, file);
+
+    char *current_key = NULL;
+
+    while (!done) {
+        if (!yaml_parser_parse(&parser, &event)) {
+            fprintf(stderr, "Parser error %d\n", parser.error);
+            break;
+        }
+
+        switch (event.type) {
+            case YAML_MAPPING_START_EVENT:
+                break;
+            case YAML_MAPPING_END_EVENT:
+                break;
+            case YAML_SCALAR_EVENT:
+                if (current_key == NULL) {
+                    current_key = strdup((char *)event.data.scalar.value);
+                } else {
+                    if (strcmp(current_key, "split_ratio") == 0) {
+                        config->split_ratio = atof((char *)event.data.scalar.value);
+                    } else if (strcmp(current_key, "k") == 0) {
+                        config->k = atoi((char *)event.data.scalar.value);
+                    } else if (strcmp(current_key, "data_path") == 0) {
+                        strncpy(config->data_path, (char *)event.data.scalar.value, sizeof(config->data_path) - 1);
+                        config->data_path[sizeof(config->data_path) - 1] = '\0'; // Ensure null-termination
+                    }
+                    free(current_key);
+                    current_key = NULL;
+                }
+                break;
+            case YAML_STREAM_END_EVENT:
+                done = 1;
+                break;
+            default:
+                break;
+        }
+
+        yaml_event_delete(&event);
+    }
+
+    if (current_key) {
+        free(current_key);
+    }
+
+    yaml_parser_delete(&parser);
+    fclose(file);
 };
 
-void qsort_y(Vector* v, int low, int high){
-    if (low < high){
-        int pivot_idx = partition_y(v, low, high);
-        qsort_y(v, low, pivot_idx - 1);
-        qsort_y(v, pivot_idx + 1, high);
-    }
-}; */
+
 
 #endif
