@@ -156,10 +156,6 @@ void dataset_read_csv(Dataset* dataset, const char* filename){
 		point_set_point(p, vals);
 		point_set_class(p, class);
 		points[i - 1] = p;
-		//memcpy(*(points + i - 1), p, sizeof(Point));
-
-		// Free the point
-		//point_destroy(&p);
 		
 		// Count the number of classes
 		if (i && class > num_classes){
@@ -178,13 +174,9 @@ void dataset_read_csv(Dataset* dataset, const char* filename){
 	// Push the points to the dataset
 	for (i = 0; i < N; i++){
 		vector_push_back(dataset->vec, points[i]);
-		//point_destroy(points + i); 
-		//free(points[i]->point);
 		free(points[i]);
 		
 	}
-	//printf("Dataset size: %hu\n", dataset->vec->size);
-	//free(*points);
 	*points = NULL;
 	free(vals);
 	vals = NULL;
@@ -192,7 +184,6 @@ void dataset_read_csv(Dataset* dataset, const char* filename){
 };
 
 void dataset_destroy(Dataset* dataset){
-	//printf("Destroying dataset\n");
 	vector_destroy(dataset->vec);
 	dataset->vec = NULL;
 	free(dataset);

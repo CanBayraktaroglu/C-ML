@@ -33,7 +33,7 @@ Point* vector_at(Vector* vec, unsigned short int index) {
 void vector_destroy(Vector* vec) {
     //printf("Destroying vector\n");
     if (vec == NULL) return;
-    
+
     free(vec->data);
     vec->data = NULL;
     free(vec);
@@ -62,7 +62,6 @@ void vector_push_back(Vector* vec, Point* element) {
         vec->data = (Point*) realloc(vec->data, vec->capacity * sizeof(unsigned short int));
     }
     memcpy(vec->data + vec->size++, element, sizeof(Point));
-    //*(vec->data + vec->size++) = *element;
     
 };
 

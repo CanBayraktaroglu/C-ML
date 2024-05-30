@@ -16,12 +16,7 @@ typedef struct{
 	Color* color;
 	unsigned char class;
 }Point;
-/* 
-void point_set_point(Point* p, float* x, float* y){
 
-	p->point[0] = *x;
-	p->point[1] = *y;
-}; */
 
 float* point_get_point(Point* p){
 	return p->point;
@@ -35,9 +30,7 @@ void point_set_point(Point* p, float* point){
 	if (p->point == NULL){
 		p->point = (float*) malloc(sizeof(float) * (unsigned long)p->dim);		
 	}
-	/* for (unsigned char i = 0; i < p->dim; i++){
-		p->point[i] = point[i];
-	} */
+	
 	memcpy(p->point, point, sizeof(float) * p->dim);
 };
 

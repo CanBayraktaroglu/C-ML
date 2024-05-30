@@ -111,7 +111,6 @@ void* ht_search(HashTable *table, void *key) {
     // Walk through the chain
     while (entry != NULL) {
         if (!table->key_cmp(entry->key, key)) {
-            //printf("Key found with value %i\n", *(int*)entry->value);
             return entry->value;
         }
         entry = entry->next;
@@ -131,7 +130,6 @@ void ht_increment(HashTable *table, void *key) {
     while (entry != NULL) {
         if (!table->key_cmp(entry->key, key)) {
             (*(int*)entry->value)++;  // Assuming value is an integer (int*
-            //printf("Value incremented to %i\n", *((int*)entry->value));
             return;
         }
         entry = entry->next;

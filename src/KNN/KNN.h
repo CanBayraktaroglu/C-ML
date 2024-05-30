@@ -135,13 +135,8 @@ Metrics KNN_evaluate(KNN* knn){
 
     for (unsigned short int i = 0; i < N; i++){
         Point* p = vector_at(knn->test_dataset->vec, i);
-		/* printf("p->class: %hu\n", p->class);
-		printf("p->point[0]: %f\n", p->point[0]);
-		printf("p->point[1]: %f\n", p->point[1]);
-		printf("p->point[2]: %f\n", p->point[2]);
-		printf("p->point[3]: %f\n", p->point[3]); */
+	
         int predicted_class = KNN_predict(knn, p);
-		//printf("Predicted class: %d\n", predicted_class);
         if (predicted_class == p->class){
             correct[predicted_class]++;
             true_positives[predicted_class]++;
