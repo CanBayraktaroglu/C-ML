@@ -368,6 +368,65 @@ void load_yaml_knn(const char *filepath, KNN_Config *config) {
     fclose(file);
 };
 
+size_t* calculate_class_frequency(Vector* vec, unsigned short num_classes){
+    size_t* class_freq = (size_t*)malloc(sizeof(size_t) * (size_t)num_classes);
+
+    // Initialize the class frequency array
+    for (unsigned short i = 0; i < num_classes; i++){
+        class_freq[i] = 0;
+    }
+
+    for (unsigned short i = 0; i < vec->size; i++){
+        Point* p = vector_at(vec, i);
+        class_freq[p->class]++;
+    }
+
+    return class_freq;
+};
+
+float* calculate_entropy(Vector* vec, unsigned short num_classes){
+    size_t* class_freq = calculate_class_frequency(vec, num_classes);
+    float* entropy = (float*)malloc(sizeof(float) * num_classes);
+    float total = (float)vec->size;
+
+    for (unsigned short i = 0; i < num_classes; i++){
+        entropy[i] = -((float)class_freq[i] / total) * log2f((float)class_freq[i] / total);
+    }
+
+    free(class_freq);
+    class_freq = NULL;
+    return entropy;
+};
+
+float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned short num_classes){
+    float parent_entropy = 0;
+    float left_entropy = 0;
+    float right_entropy = 0;
+    float total = (float)parent->size;
+
+    float* parent_entropy_arr = calculate_entropy(parent, num_classes);
+    float* left_entropy_arr = calculate_entropy(left, num_classes);
+    float* right_entropy_arr = calculate_entropy(right, num_classes);
+
+    for (unsigned short i = 0; i < num_classes; i++){
+        parent_entropy += parent_entropy_arr[i];
+        left_entropy += left_entropy_arr[i];
+        right_entropy += right_entropy_arr[i];
+    }
+
+    free(parent_entropy_arr);
+    parent_entropy_arr = NULL;
+    free(left_entropy_arr);
+    left_entropy_arr = NULL;
+    free(right_entropy_arr);
+    right_entropy_arr = NULL;
+
+    float info_gain = parent_entropy - ((float)left->size / total) * left_entropy - ((float)right->size / total) * right_entropy;
+
+    return info_gain;
+};
+
+}
 
 
 #endif
