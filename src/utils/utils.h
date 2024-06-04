@@ -3,7 +3,6 @@
 #define UTILS_H_
 
 #include "vector.h"
-#include "k_d_tree.h"
 #include "math.h"
 #include "time.h"
 #include "stdio.h"
@@ -17,6 +16,10 @@ typedef struct {
     unsigned char k;
     char data_path[256];
 } KNN_Config;
+
+typedef struct{
+    char data_path[256];
+}DT_Config;
 
 typedef struct {
     unsigned short int num_classes;
@@ -220,6 +223,7 @@ float randomGenerator()
 {
   return rand() / (float)RAND_MAX;
 };
+
  // return a normally distributed random number
 float normalRandom()
 {
@@ -368,6 +372,68 @@ void load_yaml_knn(const char *filepath, KNN_Config *config) {
     fclose(file);
 };
 
+void load_yaml_dt(const char *filepath, DT_Config *config) {
+    FILE *file = fopen(filepath, "rb");
+    if (!file) {
+        fprintf(stderr, "Could not open file: %s\n", filepath);
+        return;
+    }
+
+    yaml_parser_t parser;
+    yaml_event_t event;
+    int done = 0;
+
+    if (!yaml_parser_initialize(&parser)) {
+        fputs("Failed to initialize parser!\n", stderr);
+        fclose(file);
+        return;
+    }
+
+    yaml_parser_set_input_file(&parser, file);
+
+    char *current_key = NULL;
+
+    while (!done) {
+        if (!yaml_parser_parse(&parser, &event)) {
+            fprintf(stderr, "Parser error %d\n", parser.error);
+            break;
+        }
+
+        switch (event.type) {
+            case YAML_MAPPING_START_EVENT:
+                break;
+            case YAML_MAPPING_END_EVENT:
+                break;
+            case YAML_SCALAR_EVENT:
+                if (current_key == NULL) {
+                    current_key = strdup((char *)event.data.scalar.value);
+                } else {
+                   if (strcmp(current_key, "data_path") == 0) {
+                        strncpy(config->data_path, (char *)event.data.scalar.value, sizeof(config->data_path) - 1);
+                        config->data_path[sizeof(config->data_path) - 1] = '\0'; // Ensure null-termination
+                    }
+                    free(current_key);
+                    current_key = NULL;
+                }
+                break;
+            case YAML_STREAM_END_EVENT:
+                done = 1;
+                break;
+            default:
+                break;
+        }
+
+        yaml_event_delete(&event);
+    }
+
+    if (current_key) {
+        free(current_key);
+    }
+
+    yaml_parser_delete(&parser);
+    fclose(file);
+};
+
 size_t* calculate_class_frequency(Vector* vec, unsigned short num_classes){
     size_t* class_freq = (size_t*)malloc(sizeof(size_t) * (size_t)num_classes);
 
@@ -384,13 +450,13 @@ size_t* calculate_class_frequency(Vector* vec, unsigned short num_classes){
     return class_freq;
 };
 
-float* calculate_entropy(Vector* vec, unsigned short num_classes){
+float calculate_entropy(Vector* vec, unsigned char num_classes){	
     size_t* class_freq = calculate_class_frequency(vec, num_classes);
-    float* entropy = (float*)malloc(sizeof(float) * num_classes);
+    float entropy = 0.0f;
     float total = (float)vec->size;
 
     for (unsigned short i = 0; i < num_classes; i++){
-        entropy[i] = -((float)class_freq[i] / total) * log2f((float)class_freq[i] / total);
+        entropy += -((float)class_freq[i] / total) * log2f((float)class_freq[i] / total);
     }
 
     free(class_freq);
@@ -398,35 +464,20 @@ float* calculate_entropy(Vector* vec, unsigned short num_classes){
     return entropy;
 };
 
-float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned short num_classes){
+float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned char num_classes){
     float parent_entropy = 0;
     float left_entropy = 0;
     float right_entropy = 0;
     float total = (float)parent->size;
 
-    float* parent_entropy_arr = calculate_entropy(parent, num_classes);
-    float* left_entropy_arr = calculate_entropy(left, num_classes);
-    float* right_entropy_arr = calculate_entropy(right, num_classes);
-
-    for (unsigned short i = 0; i < num_classes; i++){
-        parent_entropy += parent_entropy_arr[i];
-        left_entropy += left_entropy_arr[i];
-        right_entropy += right_entropy_arr[i];
-    }
-
-    free(parent_entropy_arr);
-    parent_entropy_arr = NULL;
-    free(left_entropy_arr);
-    left_entropy_arr = NULL;
-    free(right_entropy_arr);
-    right_entropy_arr = NULL;
+    float parent_entropy_arr = calculate_entropy(parent, num_classes);
+    float left_entropy_arr = calculate_entropy(left, num_classes);
+    float right_entropy_arr = calculate_entropy(right, num_classes);
 
     float info_gain = parent_entropy - ((float)left->size / total) * left_entropy - ((float)right->size / total) * right_entropy;
 
     return info_gain;
 };
-
-}
 
 
 #endif

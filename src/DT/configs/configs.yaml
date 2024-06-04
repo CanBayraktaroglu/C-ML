@@ -1,3 +1,1 @@
-split_ratio: 0.55
-k: 5
 data_path: "../data/iris.csv"

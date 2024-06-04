@@ -6,6 +6,7 @@
 #include "string.h"
 #include "vector.h"
 #include "dataset.h"
+#include "utils.h"
 
 typedef struct DT_Node{
     u_int8_t feature_idx;
@@ -20,7 +21,7 @@ typedef struct DT_Node{
 DT_Node* dt_node_create(){
     DT_Node* node = (DT_Node*)malloc(sizeof(DT_Node));
     node->feature_idx = __UINT8_MAX__;
-    node->threshold = MAXFLOAT;
+    node->threshold = __FLT_MAX__;
     node->left = NULL;
     node->right = NULL;
     node->vec = NULL;
@@ -60,7 +61,7 @@ void dt_node_destroy(DT_Node* node, size_t depth){
     node = NULL;
 };
 
-void dt_node_build(DT_Node* root, Vector* vec, unsigned short num_classes){
+void dt_node_build(DT_Node* root, Vector* vec, unsigned char num_classes){
     if (root == NULL) return;
     if (root->is_leaf) return;
     if (!vec->size) return;
@@ -74,23 +75,25 @@ void dt_node_build(DT_Node* root, Vector* vec, unsigned short num_classes){
     }
     
     float best_info_gain = 0;
-    size_t best_feature_idx = 0;
+    unsigned short best_feature_idx = 0;
     float best_threshold = 0;
     Vector* best_left = NULL;
     Vector* best_right = NULL;
     unsigned char dim = vector_at(vec, 0)->dim;
 
-    class_freq = calculate_class_frequency(dataset);
-
+    // for each feature dimension
     for (unsigned char i = 0; i < dim; i++){
-        for (unsigned short j = 0; j < dataset->vec->size; j++){
-            Point* p = vector_at(dataset->vec, j);
+
+        // for each point in the dataset
+        for (unsigned short j = 0; j < vec->size; j++){
+            Point* p = vector_at(vec, j);
             float threshold = p->point[i];
             Vector* left = vector_create(0);
             Vector* right = vector_create(0);
             
-            for (unsigned short k = 0; k < dataset->vec->size; k++){
-                Point* q = vector_at(dataset->vec, k);
+            // partition the dataset into two parts according to the threshold
+            for (unsigned short k = 0; k < vec->size; k++){
+                Point* q = vector_at(vec, k);
                 if (q->point[i] <= threshold){
                     vector_push_back(left, q);
                 }else{
@@ -98,7 +101,8 @@ void dt_node_build(DT_Node* root, Vector* vec, unsigned short num_classes){
                 }
             }
             
-            float info_gain = dataset_info_gain(dataset, left, right);
+            float info_gain = calculate_info_gain(vec, left, right, num_classes);
+
             if (info_gain > best_info_gain){
                 best_info_gain = info_gain;
                 best_feature_idx = i;
@@ -114,7 +118,16 @@ void dt_node_build(DT_Node* root, Vector* vec, unsigned short num_classes){
         }
     }
 
+    root->feature_idx = best_feature_idx;
+    root->threshold = best_threshold;
+    root->info_gain = best_info_gain;
+    root->left = dt_node_create();
+    root->right = dt_node_create();
 
+    // go left
+    dt_node_build(root->left, best_left, num_classes);
+    // go right
+    dt_node_build(root->right, best_right, num_classes);
 
     
 };
