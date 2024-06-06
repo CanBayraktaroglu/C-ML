@@ -450,12 +450,29 @@ size_t* calculate_class_frequency(Vector* vec, unsigned short num_classes){
     return class_freq;
 };
 
+unsigned short calculate_num_classes(Vector* vec, unsigned short total_num_classes){
+    size_t* class_freq = calculate_class_frequency(vec, total_num_classes);
+    unsigned short num_classes = 0;
+    for(unsigned short i = 0; i < total_num_classes; i++){
+        if (class_freq[i] > 0){
+            num_classes++;
+        }
+    }
+
+    free(class_freq);
+    class_freq = NULL;
+    return num_classes;
+};
+
 float calculate_entropy(Vector* vec, unsigned char num_classes){	
     size_t* class_freq = calculate_class_frequency(vec, num_classes);
     float entropy = 0.0f;
     float total = (float)vec->size;
 
+    if (total == 0.0) return 1.0;
+
     for (unsigned short i = 0; i < num_classes; i++){
+        if (!class_freq[i]) continue;
         entropy += -((float)class_freq[i] / total) * log2f((float)class_freq[i] / total);
     }
 
@@ -470,9 +487,9 @@ float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned 
     float right_entropy = 0;
     float total = (float)parent->size;
 
-    float parent_entropy_arr = calculate_entropy(parent, num_classes);
-    float left_entropy_arr = calculate_entropy(left, num_classes);
-    float right_entropy_arr = calculate_entropy(right, num_classes);
+    parent_entropy = calculate_entropy(parent, num_classes);
+    left_entropy = calculate_entropy(left, num_classes);
+    right_entropy = calculate_entropy(right, num_classes);
 
     float info_gain = parent_entropy - ((float)left->size / total) * left_entropy - ((float)right->size / total) * right_entropy;
 

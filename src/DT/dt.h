@@ -77,8 +77,8 @@ void dt_node_build(DT_Node* root, Vector* vec, unsigned char num_classes){
     float best_info_gain = 0;
     unsigned short best_feature_idx = 0;
     float best_threshold = 0;
-    Vector* best_left = NULL;
-    Vector* best_right = NULL;
+    Vector** best_left = NULL;
+    Vector** best_right = NULL;
     unsigned char dim = vector_at(vec, 0)->dim;
 
     // for each feature dimension
@@ -88,8 +88,8 @@ void dt_node_build(DT_Node* root, Vector* vec, unsigned char num_classes){
         for (unsigned short j = 0; j < vec->size; j++){
             Point* p = vector_at(vec, j);
             float threshold = p->point[i];
-            Vector* left = vector_create(0);
-            Vector* right = vector_create(0);
+            Vector* left = vector_create(vec->size / 2);
+            Vector* right = vector_create(vec->size / 2);
             
             // partition the dataset into two parts according to the threshold
             for (unsigned short k = 0; k < vec->size; k++){
@@ -100,34 +100,39 @@ void dt_node_build(DT_Node* root, Vector* vec, unsigned char num_classes){
                     vector_push_back(right, q);
                 }
             }
-            
             float info_gain = calculate_info_gain(vec, left, right, num_classes);
+            printf("info gain: %f\n", info_gain);
 
             if (info_gain > best_info_gain){
                 best_info_gain = info_gain;
                 best_feature_idx = i;
                 best_threshold = threshold;
-                best_left = left;
-                best_right = right;
+                printf("destroying best left and right\n");
+                *best_left = left;
+                *best_right = right;
             }else{
                 vector_destroy(left);
                 left = NULL;
                 vector_destroy(right);
                 right = NULL;
             }
-        }
+        } 
     }
 
+    printf("setting the root\n");
     root->feature_idx = best_feature_idx;
     root->threshold = best_threshold;
     root->info_gain = best_info_gain;
+    printf("creating left and right nodes\n");
     root->left = dt_node_create();
     root->right = dt_node_create();
 
     // go left
-    dt_node_build(root->left, best_left, num_classes);
+    printf("going left\n");
+    dt_node_build(root->left, *best_left, num_classes);
     // go right
-    dt_node_build(root->right, best_right, num_classes);
+    printf("going right\n");
+    dt_node_build(root->right, *best_right, num_classes);
 
     
 };
