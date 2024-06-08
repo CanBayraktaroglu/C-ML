@@ -66,11 +66,11 @@ Metrics* create_metrics(unsigned short int num_classes){
     return metrics;
 };
 
-void metrics_destroy(Metrics* metrics){
-    free(metrics->precision);
-    metrics->precision = NULL;
-    free(metrics);
-    metrics = NULL;
+void metrics_destroy(Metrics** metrics){
+    free((*metrics)->precision);
+    (*metrics)->precision = NULL;
+    free(*metrics);
+    *metrics = NULL;
 };
 
 HashEntry* create_entry(void *key, void *value) {
@@ -182,9 +182,10 @@ void ht_delete(HashTable *table, void *key) {
     }
 };
 
-void ht_destroy(HashTable *table) {
+void ht_destroy(HashTable** table) {
+    if (*table == NULL) return;
     for (int i = 0; i < TABLE_SIZE; ++i) {
-        HashEntry *entry = table->entries[i];
+        HashEntry *entry = (*table)->entries[i];
         while (entry != NULL) {
             HashEntry *temp = entry;
             free(temp->value);
@@ -192,8 +193,8 @@ void ht_destroy(HashTable *table) {
             free(temp);
         }
     }
-    free(table->entries);
-    free(table);
+    free((*table)->entries);
+    free(*table);
 };
 
 int int_hash(const void *key) {
@@ -446,13 +447,13 @@ size_t* calculate_class_frequency(Vector* vec, unsigned short num_classes){
         Point* p = vector_at(vec, i);
         class_freq[p->class]++;
     }
-
     return class_freq;
 };
 
 unsigned short calculate_num_classes(Vector* vec, unsigned short total_num_classes){
     size_t* class_freq = calculate_class_frequency(vec, total_num_classes);
     unsigned short num_classes = 0;
+
     for(unsigned short i = 0; i < total_num_classes; i++){
         if (class_freq[i] > 0){
             num_classes++;
@@ -469,7 +470,11 @@ float calculate_entropy(Vector* vec, unsigned char num_classes){
     float entropy = 0.0f;
     float total = (float)vec->size;
 
-    if (total == 0.0) return 1.0;
+    if (total == 0.0){
+        free(class_freq);
+        class_freq = NULL;
+        return 1.0;
+    } 
 
     for (unsigned short i = 0; i < num_classes; i++){
         if (!class_freq[i]) continue;
@@ -492,7 +497,6 @@ float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned 
     right_entropy = calculate_entropy(right, num_classes);
 
     float info_gain = parent_entropy - ((float)left->size / total) * left_entropy - ((float)right->size / total) * right_entropy;
-
     return info_gain;
 };
 

@@ -35,50 +35,62 @@ void dt_node_set_vec(DT_Node* node, Vector* vec){
     if (node->vec == NULL){
         node->vec = (Vector*)malloc(sizeof(Vector));
     }
-    memcpy(node->vec, vec,  sizeof(Vector));
+    memcpy(node->vec, vec, sizeof(Vector));
 };
 
 
-void dt_node_destroy(DT_Node* node, size_t depth){
-    if (node == NULL) return;
+void dt_node_destroy(DT_Node** node, size_t depth){
+    if (*node == NULL) return;
     
+    // Destroy the points
     if (!depth){
-        for (unsigned short i = 0; i < node->vec->size; i++){
-            Point* p = vector_at(node->vec, i);
-            point_destroy(&p);
+        for (unsigned short i = 0; i < (*node)->vec->size; i++){
+            Point* p = vector_at((*node)->vec, i);
+            vec_point_destroy(&p);
+            
         }
     }
 
-    dt_node_destroy(node->left, depth + 1);
-    node->left = NULL;
-    dt_node_destroy(node->right, depth + 1);
-    node->right = NULL;
+    // Destroy left node
+    dt_node_destroy(&(*node)->left, depth + 1);
+    (*node)->left = NULL;
+
+    // Destroy right node
+    dt_node_destroy(&(*node)->right, depth + 1);
+    (*node)->right = NULL;
     
-    vector_destroy(node->vec);
-    free(node->vec);
-    node->vec = NULL;
-    free(node);
-    node = NULL;
+    // Destroy the vector
+    if (depth) vector_destroy(&(*node)->vec);
+    else free((*node)->vec);
+    (*node)->vec = NULL;
+
+    // Destroy the node itself
+    free(*node);
+    *node = NULL;
 };
 
-void dt_node_build(DT_Node* root, Vector* vec, unsigned char num_classes){
+void dt_build(DT_Node* root, Vector* vec, unsigned char num_classes){
     if (root == NULL) return;
     if (root->is_leaf) return;
     if (!vec->size) return;
 
+    // Set the vector
     dt_node_set_vec(root, vec);
 
+    // Get number of classes in the vector
+    unsigned short num_classes_vec = calculate_num_classes(vec, num_classes);
+
     //Check if the node is a leaf
-    if (num_classes == 1){
+    if (num_classes_vec == 1){
         root->is_leaf = 1;
         return;
     }
     
-    float best_info_gain = 0;
+    float best_info_gain = 0.0f;
     unsigned short best_feature_idx = 0;
     float best_threshold = 0;
-    Vector** best_left = NULL;
-    Vector** best_right = NULL;
+    Vector* best_left = NULL;
+    Vector* best_right = NULL;
     unsigned char dim = vector_at(vec, 0)->dim;
 
     // for each feature dimension
@@ -101,40 +113,53 @@ void dt_node_build(DT_Node* root, Vector* vec, unsigned char num_classes){
                 }
             }
             float info_gain = calculate_info_gain(vec, left, right, num_classes);
-            printf("info gain: %f\n", info_gain);
 
             if (info_gain > best_info_gain){
                 best_info_gain = info_gain;
                 best_feature_idx = i;
                 best_threshold = threshold;
-                printf("destroying best left and right\n");
-                *best_left = left;
-                *best_right = right;
+                if (best_left != NULL) vector_destroy(&best_left);
+                best_left = left;
+                if (best_right != NULL) vector_destroy(&best_right);
+                best_right = right;
             }else{
-                vector_destroy(left);
-                left = NULL;
-                vector_destroy(right);
-                right = NULL;
+                vector_destroy(&left);
+                vector_destroy(&right);
             }
+
         } 
     }
 
-    printf("setting the root\n");
     root->feature_idx = best_feature_idx;
     root->threshold = best_threshold;
     root->info_gain = best_info_gain;
-    printf("creating left and right nodes\n");
     root->left = dt_node_create();
     root->right = dt_node_create();
 
     // go left
-    printf("going left\n");
-    dt_node_build(root->left, *best_left, num_classes);
+    dt_build(root->left, best_left, num_classes);
     // go right
-    printf("going right\n");
-    dt_node_build(root->right, *best_right, num_classes);
+    dt_build(root->right, best_right, num_classes);
 
-    
+    free(best_left);
+    free(best_right);
+
+};
+
+void dt_print(DT_Node* node){
+    if (node == NULL) return;
+    if (node->is_leaf){
+        printf("Leaf\n");
+        return;
+    }
+
+    printf("Feature idx: %hhu\n", node->feature_idx);
+    printf("Threshold: %f\n", node->threshold);
+    printf("Info gain: %f\n", node->info_gain);
+    printf("Left:\n");
+    dt_print(node->left);
+    printf("Right:\n");
+    dt_print(node->right);
 };
 
 
