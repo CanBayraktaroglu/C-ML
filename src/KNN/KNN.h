@@ -96,29 +96,26 @@ int KNN_predict(KNN* knn, Point* p){
 	heap.nodes = NULL;
 	free(classes);
 	classes = NULL;
-	ht_destroy(ht);
+	ht_destroy(&ht);
 	ht = NULL;
 
 	return majority_class;
 };
 
-void KNN_destroy(KNN* knn){
+void KNN_destroy(KNN** knn){
 	
-	
-	dataset_destroy(knn->total_dataset);
-	dataset_destroy(knn->train_dataset);
+	dataset_destroy(&(*knn)->total_dataset);
+	dataset_destroy(&(*knn)->train_dataset);
 
-	for (unsigned short int i = 0; i < knn->test_dataset->vec->size; i++){
-		Point* p = vector_at(knn->test_dataset->vec, i);
+	for (unsigned short int i = 0; i < (*knn)->test_dataset->vec->size; i++){
+		Point* p = vector_at((*knn)->test_dataset->vec, i);
 		free(p->point);
 		p->point = NULL;
 	}
-
-	dataset_destroy(knn->test_dataset);
-	k_d_tree_node_destroy(knn->root_node);
-
-	free(knn);
-	knn = NULL;
+	dataset_destroy(&(*knn)->test_dataset);
+	k_d_tree_node_destroy(&(*knn)->root_node);
+	free(*knn);
+	*knn = NULL;
 };
 
 Metrics* KNN_evaluate(KNN* knn){
@@ -197,8 +194,8 @@ void KNN_run(KNN* knn, KNN_Config* config){
 	print_metrics(metrics);
 	
 	//Free memory
-	KNN_destroy(knn);
-	metrics_destroy(metrics);
+	KNN_destroy(&knn);
+	metrics_destroy(&metrics);
 	
 };
 #endif

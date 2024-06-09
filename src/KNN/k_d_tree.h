@@ -28,17 +28,16 @@ KDTreeNode* k_d_tree_node_create(Point* point){
     return node;
 };
 
-void k_d_tree_node_destroy(KDTreeNode* node){
-    if (node == NULL) return;
-    //printf("Destroying node\n");
-    k_d_tree_node_destroy(node->left);
-    k_d_tree_node_destroy(node->right);
+void k_d_tree_node_destroy(KDTreeNode** node){
+    if (*node == NULL) return;
+    k_d_tree_node_destroy(&(*node)->left);
+    k_d_tree_node_destroy(&(*node)->right);
     
-    point_destroy(&node->p);
-    free(node->p);
-    node->p = NULL;
-    free(node);
-    node = NULL;
+    point_destroy(&(*node)->p);
+    free((*node)->p);
+    (*node)->p = NULL;
+    free(*node);
+    *node = NULL;
 };
 
 KDTreeNode* k_d_tree_build(Vector* points, unsigned short int depth){
@@ -72,12 +71,12 @@ KDTreeNode* k_d_tree_build(Vector* points, unsigned short int depth){
     
     //printf("Destroying left vector at depth: %hhu\n", depth);
     //printf("vector size: %hu\n", left_points->size);
-    vector_destroy(left_points);
+    vector_destroy(&left_points);
     left_points = NULL;
 
     //printf("Destroying right vector at depth: %hhu\n", depth);
     //printf("vector size: %hu\n", right_points->size);
-    vector_destroy(right_points);
+    vector_destroy(&right_points);
     right_points = NULL;
 
     return node;

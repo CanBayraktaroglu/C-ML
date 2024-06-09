@@ -23,7 +23,11 @@ Dataset* dataset_create(){
 };
 
 void dataset_set_vector(Dataset* dataset, Vector* vec){
-	dataset->vec = vec;
+	if (dataset->vec == NULL){
+		dataset->vec = (Vector*) malloc(sizeof(Vector));
+	}
+	memcpy(dataset->vec, vec, sizeof(Vector));
+	//dataset->vec = vec;
 };
 
 void dataset_set_num_classes(Dataset* dataset, unsigned char num_classes){
@@ -183,11 +187,14 @@ void dataset_read_csv(Dataset* dataset, const char* filename){
 	fclose(file);
 };
 
-void dataset_destroy(Dataset* dataset){
-	vector_destroy(dataset->vec);
-	dataset->vec = NULL;
-	free(dataset);
-	dataset = NULL;
+void dataset_destroy(Dataset** dataset){
+	if (*dataset == NULL) return;
+
+	vector_destroy(&(*dataset)->vec);
+	(*dataset)->vec = NULL;
+
+	free(*dataset);
+	*dataset = NULL;
 
 };
 

@@ -3,7 +3,6 @@
 #define UTILS_H_
 
 #include "vector.h"
-#include "k_d_tree.h"
 #include "math.h"
 #include "time.h"
 #include "stdio.h"
@@ -17,6 +16,11 @@ typedef struct {
     unsigned char k;
     char data_path[256];
 } KNN_Config;
+
+typedef struct{
+    char data_path[256];
+    float split_ratio;
+}DT_Config;
 
 typedef struct {
     unsigned short int num_classes;
@@ -63,11 +67,11 @@ Metrics* create_metrics(unsigned short int num_classes){
     return metrics;
 };
 
-void metrics_destroy(Metrics* metrics){
-    free(metrics->precision);
-    metrics->precision = NULL;
-    free(metrics);
-    metrics = NULL;
+void metrics_destroy(Metrics** metrics){
+    free((*metrics)->precision);
+    (*metrics)->precision = NULL;
+    free(*metrics);
+    *metrics = NULL;
 };
 
 HashEntry* create_entry(void *key, void *value) {
@@ -179,9 +183,10 @@ void ht_delete(HashTable *table, void *key) {
     }
 };
 
-void ht_destroy(HashTable *table) {
+void ht_destroy(HashTable** table) {
+    if (*table == NULL) return;
     for (int i = 0; i < TABLE_SIZE; ++i) {
-        HashEntry *entry = table->entries[i];
+        HashEntry *entry = (*table)->entries[i];
         while (entry != NULL) {
             HashEntry *temp = entry;
             free(temp->value);
@@ -189,8 +194,8 @@ void ht_destroy(HashTable *table) {
             free(temp);
         }
     }
-    free(table->entries);
-    free(table);
+    free((*table)->entries);
+    free(*table);
 };
 
 int int_hash(const void *key) {
@@ -220,6 +225,7 @@ float randomGenerator()
 {
   return rand() / (float)RAND_MAX;
 };
+
  // return a normally distributed random number
 float normalRandom()
 {
@@ -368,6 +374,134 @@ void load_yaml_knn(const char *filepath, KNN_Config *config) {
     fclose(file);
 };
 
+void load_yaml_dt(const char *filepath, DT_Config *config) {
+    FILE *file = fopen(filepath, "rb");
+    if (!file) {
+        fprintf(stderr, "Could not open file: %s\n", filepath);
+        return;
+    }
+
+    yaml_parser_t parser;
+    yaml_event_t event;
+    int done = 0;
+
+    if (!yaml_parser_initialize(&parser)) {
+        fputs("Failed to initialize parser!\n", stderr);
+        fclose(file);
+        return;
+    }
+
+    yaml_parser_set_input_file(&parser, file);
+
+    char *current_key = NULL;
+
+    while (!done) {
+        if (!yaml_parser_parse(&parser, &event)) {
+            fprintf(stderr, "Parser error %d\n", parser.error);
+            break;
+        }
+
+        switch (event.type) {
+            case YAML_MAPPING_START_EVENT:
+                break;
+            case YAML_MAPPING_END_EVENT:
+                break;
+            case YAML_SCALAR_EVENT:
+                if (current_key == NULL) {
+                    current_key = strdup((char *)event.data.scalar.value);
+                } else {
+                    if (strcmp(current_key, "split_ratio") == 0) 
+                        config->split_ratio = atof((char *)event.data.scalar.value);
+                   else if (strcmp(current_key, "data_path") == 0) {
+                        strncpy(config->data_path, (char *)event.data.scalar.value, sizeof(config->data_path) - 1);
+                        config->data_path[sizeof(config->data_path) - 1] = '\0'; // Ensure null-termination
+                    }
+                    free(current_key);
+                    current_key = NULL;
+                }
+                break;
+            case YAML_STREAM_END_EVENT:
+                done = 1;
+                break;
+            default:
+                break;
+        }
+
+        yaml_event_delete(&event);
+    }
+
+    if (current_key) {
+        free(current_key);
+    }
+
+    yaml_parser_delete(&parser);
+    fclose(file);
+};
+
+size_t* calculate_class_frequency(Vector* vec, unsigned short num_classes){
+    size_t* class_freq = (size_t*)malloc(sizeof(size_t) * (size_t)num_classes);
+
+    // Initialize the class frequency array
+    for (unsigned short i = 0; i < num_classes; i++){
+        class_freq[i] = 0;
+    }
+
+    for (unsigned short i = 0; i < vec->size; i++){
+        Point* p = vector_at(vec, i);
+        class_freq[p->class]++;
+    }
+    return class_freq;
+};
+
+unsigned short calculate_num_classes(Vector* vec, unsigned short total_num_classes){
+    size_t* class_freq = calculate_class_frequency(vec, total_num_classes);
+    unsigned short num_classes = 0;
+
+    for(unsigned short i = 0; i < total_num_classes; i++){
+        if (class_freq[i] > 0){
+            num_classes++;
+        }
+    }
+
+    free(class_freq);
+    class_freq = NULL;
+    return num_classes;
+};
+
+float calculate_entropy(Vector* vec, unsigned char num_classes){	
+    size_t* class_freq = calculate_class_frequency(vec, num_classes);
+    float entropy = 0.0f;
+    float total = (float)vec->size;
+
+    if (total == 0.0){
+        free(class_freq);
+        class_freq = NULL;
+        return 1.0;
+    } 
+
+    for (unsigned short i = 0; i < num_classes; i++){
+        if (!class_freq[i]) continue;
+        entropy += -((float)class_freq[i] / total) * log2f((float)class_freq[i] / total);
+    }
+
+    free(class_freq);
+    class_freq = NULL;
+    return entropy;
+};
+
+float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned char num_classes){
+    float parent_entropy = 0;
+    float left_entropy = 0;
+    float right_entropy = 0;
+    float total = (float)parent->size;
+
+    parent_entropy = calculate_entropy(parent, num_classes);
+    left_entropy = calculate_entropy(left, num_classes);
+    right_entropy = calculate_entropy(right, num_classes);
+
+    float info_gain = parent_entropy - ((float)left->size / total) * left_entropy - ((float)right->size / total) * right_entropy;
+    return info_gain;
+};
 
 
 #endif

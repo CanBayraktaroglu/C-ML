@@ -30,14 +30,13 @@ Point* vector_at(Vector* vec, unsigned short int index) {
     }
     return &vec->data[index];
 };
-void vector_destroy(Vector* vec) {
-    //printf("Destroying vector\n");
-    if (vec == NULL) return;
+void vector_destroy(Vector** vec) {
+     if (*vec == NULL) return;
 
-    free(vec->data);
-    vec->data = NULL;
-    free(vec);
-    vec = NULL;
+    free((*vec)->data);
+    (*vec)->data = NULL;
+    free(*vec);
+    *vec = NULL;
     
 };
 
@@ -59,7 +58,7 @@ void vector_destroy_all(Vector* vec) {
 void vector_push_back(Vector* vec, Point* element) {
     if (vec->size == vec->capacity) {
         vec->capacity<<=1;
-        vec->data = (Point*) realloc(vec->data, vec->capacity * sizeof(unsigned short int));
+        vec->data = (Point*) realloc(vec->data, (unsigned long)vec->capacity * sizeof(Point));
     }
     memcpy(vec->data + vec->size++, element, sizeof(Point));
     
@@ -74,15 +73,18 @@ Point* vector_pop(Vector* vec){
 
 };
 
-
-
 void vector_print(Vector* vec) {
     printf("[");
     for (unsigned short int i = 0; i < vec->size; i++) {
 	printf("[");
 
 	Point* p_pt = vec->data + i;	
-	printf("%f,%f", p_pt->point[0], p_pt->point[1]);
+    for (unsigned char j = 0; j < p_pt->dim; j++){
+        printf("%f", p_pt->point[j]);
+        if (j < p_pt->dim - 1) {
+            printf(", ");
+        }
+    }
 	printf("]");
 
         if (i < vec->size - 1) {
