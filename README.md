@@ -37,12 +37,12 @@ The Decision Tree project is organized as follows:
 
 - `src/DT/`: Contains the source code for the Decision Tree algorithm. Key files include:
   - [`dt.c`](src/DT/dt.c): The main entry point for the program.
-  - [`dt.h`](src/DT/dt.h): Header file for the Decision Tree algorithm, which includes the definition of the `DT_Classifier` structure and the `dt_classifier_build` and `dt_classifier_run` functions.
+  - [`dt.h`](src/DT/dt.h): Header file for the Decision Tree algorithm, which includes the definition of the `DT_Classifier` structure and the `dt_classifier_fit` and `dt_classifier_run` functions.
   - `configs/`: Contains configuration files for the Decision Tree algorithm.
 
 To run the Decision Tree algorithm, you need to call the `dt_classifier_run` function. This function initializes a decision tree and a dataset, loads configurations from a YAML file, splits the dataset into training and testing sets, builds the decision tree using the training set, and evaluates the decision tree using the testing set.
 
-The building of the decision tree is done by the `dt_classifier_build` function. This function recursively splits the dataset into two parts according to a threshold that maximizes the information gain, until all data points in each part belong to the same class.
+The building of the decision tree is done by the `dt_classifier_fit` function. This function recursively splits the dataset into two parts according to a threshold that maximizes the information gain, until all data points in each part belong to the same class.
 
 Please refer to the source code in [`dt.c`](src/DT/dt.c) and [`dt.h`](src/DT/dt.h) for more details.
 

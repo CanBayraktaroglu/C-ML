@@ -131,7 +131,7 @@ void dt_node_set_vec(DT_Node* node, Vector* vec){
     memcpy(node->vec, vec, sizeof(Vector));
 };
 
-void dt_classifier_build(DT_Node* root, Vector* vec, unsigned char num_classes){
+void dt_classifier_fit(DT_Node* root, Vector* vec, unsigned char num_classes){
     if (root == NULL) return;
     if (root->is_leaf) return;
     if (!vec->size) return;
@@ -199,9 +199,9 @@ void dt_classifier_build(DT_Node* root, Vector* vec, unsigned char num_classes){
     root->right = dt_node_create();
 
     // go left
-    dt_classifier_build(root->left, best_left, num_classes);
+    dt_classifier_fit(root->left, best_left, num_classes);
     // go right
-    dt_classifier_build(root->right, best_right, num_classes);
+    dt_classifier_fit(root->right, best_right, num_classes);
 
     free(best_left);
     free(best_right);
@@ -307,7 +307,7 @@ void dt_classifier_run(){
 	dt_classifier_set_test_dataset(dt_classifier, test_dataset);
 
 	//build decision tree
-	dt_classifier_build(dt_classifier->root, dt_classifier->train_dataset->vec, dt_classifier->num_classes);
+	dt_classifier_fit(dt_classifier->root, dt_classifier->train_dataset->vec, dt_classifier->num_classes);
 	printf("Decision tree built\n");
 
 	//Print decision tree
