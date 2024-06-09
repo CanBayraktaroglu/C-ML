@@ -31,8 +31,7 @@ Point* vector_at(Vector* vec, unsigned short int index) {
     return &vec->data[index];
 };
 void vector_destroy(Vector** vec) {
-    printf("Destroying vector\n");
-    if (*vec == NULL) return;
+     if (*vec == NULL) return;
 
     free((*vec)->data);
     (*vec)->data = NULL;

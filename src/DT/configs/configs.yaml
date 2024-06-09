@@ -1,1 +1,2 @@
 data_path: "../data/iris.csv"
+split_ratio: 0.7

@@ -19,6 +19,7 @@ typedef struct {
 
 typedef struct{
     char data_path[256];
+    float split_ratio;
 }DT_Config;
 
 typedef struct {
@@ -409,7 +410,9 @@ void load_yaml_dt(const char *filepath, DT_Config *config) {
                 if (current_key == NULL) {
                     current_key = strdup((char *)event.data.scalar.value);
                 } else {
-                   if (strcmp(current_key, "data_path") == 0) {
+                    if (strcmp(current_key, "split_ratio") == 0) 
+                        config->split_ratio = atof((char *)event.data.scalar.value);
+                   else if (strcmp(current_key, "data_path") == 0) {
                         strncpy(config->data_path, (char *)event.data.scalar.value, sizeof(config->data_path) - 1);
                         config->data_path[sizeof(config->data_path) - 1] = '\0'; // Ensure null-termination
                     }
