@@ -5,7 +5,8 @@ This project is a testament to the power and simplicity of the C programming lan
 The goal of this project is not just to create machine learning models, but to understand the underlying principles and mechanics by building them from the ground up. This journey takes us through the intricacies of data structures, algorithmic complexity, and numerical computation, all in the context of the C language.
 
 ## Utils
-Every useful tool for all projects are stored under ´src/utils/´ directory:
+Every useful tool for all projects are stored under utils directory:
+- [´src/utils/´](src/utils/)
   - [`utils.h`](src/KNN/utils.h): Contains utility functions and structures.
   - [`vector.h`](src/KNN/vector.h): Contains vector-related functions and structures.
   - [`point.h`](src/KNN/point.h): Contains point-related functions and structures.
