@@ -11,8 +11,8 @@ void main(void){
     matrix_set(X, 2, 1, 6);
     matrix_print(X);
     printf("----------------\n");
-    Matrix* X_T = matrix_transpose(X);
-    matrix_print(X_T);
+    Matrix* X_inv = matrix_inverse_newton(X, 1000, 0.0001);
+    matrix_print(X_inv);
     matrix_destroy(&X);
-    matrix_destroy(&X_T);
+    matrix_destroy(&X_inv);
 };

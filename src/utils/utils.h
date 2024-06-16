@@ -503,7 +503,6 @@ float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned 
     float info_gain = parent_entropy - ((float)left->size / total) * left_entropy - ((float)right->size / total) * right_entropy;
     return info_gain;
 };
-
 float* dot_product(float* a, float* b, size_t n){
     float* result = (float*)calloc(n, sizeof(float));
     for (size_t i = 0; i < n; i++){
@@ -519,63 +518,6 @@ Matrix* outer_product(float* a, float* b, size_t n){
         }
     }
     return matrix;
-};
-
-Matrix* scalar_product(Matrix* mat, float scalar){
-    Matrix* result = matrix_create(mat->n_rows, mat->n_cols);
-    for (size_t i = 0; i < mat->n_rows; i++){
-        for (size_t j = 0; j < mat->n_cols; j++){
-            matrix_set(result, i, j, scalar * matrix_get(mat, i, j));
-        }
-    }
-    return result;
-};
-
-Matrix* matrix_add(Matrix* a, Matrix* b){
-    if (a->n_rows != b->n_rows || a->n_cols != b->n_cols){
-        printf("Matrix dimensions do not match\n");
-        return NULL;
-    }
-    Matrix* result = matrix_create(a->n_rows, a->n_cols);
-    for (size_t i = 0; i < a->n_rows; i++){
-        for (size_t j = 0; j < a->n_cols; j++){
-            matrix_set(result, i, j, matrix_get(a, i, j) + matrix_get(b, i, j));
-        }
-    }
-    return result;
-};
-
-Matrix* matrix_subtract(Matrix* a, Matrix* b){
-    if (a->n_rows != b->n_rows || a->n_cols != b->n_cols){
-        printf("Matrix dimensions do not match\n");
-        return NULL;
-    }
-    Matrix* result = matrix_create(a->n_rows, a->n_cols);
-    for (size_t i = 0; i < a->n_rows; i++){
-        for (size_t j = 0; j < a->n_cols; j++){
-            matrix_set(result, i, j, matrix_get(a, i, j) - matrix_get(b, i, j));
-        }
-    }
-    return result;
-};
-
-Matrix* matrix_multiply(Matrix* a, Matrix* b){
-    if (a->n_cols != b->n_rows){
-        printf("Matrix dimensions do not match\n");
-        return NULL;
-    }
-    
-    Matrix* result = matrix_create(a->n_rows, b->n_cols);
-    for (size_t i = 0; i < a->n_rows; i++){
-        for (size_t j = 0; j < b->n_cols; j++){
-            float sum = 0.0;
-            for (size_t k = 0; k < a->n_cols; k++){
-                sum += matrix_get(a, i, k) * matrix_get(b, k, j);
-            }
-            matrix_set(result, i, j, sum);
-        }
-    }
-    return result;
 };
 
 #endif
