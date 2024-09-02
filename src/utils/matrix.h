@@ -100,6 +100,15 @@ Matrix* matrix_subtract(Matrix* a, Matrix* b, unsigned char free){
     return result;
 };
 
+void matrix_print(Matrix* mat){
+    for(size_t i = 0; i < mat->n_rows; i++){
+        for(size_t j = 0; j < mat->n_cols; j++){
+            printf("%f ", matrix_get(mat, i, j));
+        }
+        printf("\n");
+    }
+};
+
 Matrix* matrix_multiply(Matrix* a, Matrix* b, unsigned char free){
     if (a->n_cols != b->n_rows){
         printf("Matrix dimensions do not match for multiplication.\n");
@@ -117,19 +126,11 @@ Matrix* matrix_multiply(Matrix* a, Matrix* b, unsigned char free){
         }
     }
 
-    if (free) matrix_destroy(&a); matrix_destroy(&b);
+    if (free){ matrix_destroy(&a); matrix_destroy(&b);}
 
     return result;
 };
 
-void matrix_print(Matrix* mat){
-    for(size_t i = 0; i < mat->n_rows; i++){
-        for(size_t j = 0; j < mat->n_cols; j++){
-            printf("%f ", matrix_get(mat, i, j));
-        }
-        printf("\n");
-    }
-};
 
 Matrix* create_identity_matrix(size_t n){
     Matrix* mat = matrix_create(n, n);
@@ -156,6 +157,7 @@ float matrix_froebenius_norm(Matrix* mat){
 
 float calculate_inverse_tolerance(Matrix* A_T, Matrix* x){
     Matrix* prod = matrix_multiply(A_T, x, 0);
+    matrix_print(x);
     Matrix* identity = create_identity_matrix(A_T->n_rows);
     Matrix* diff = matrix_subtract(prod, identity, 1);
     float tol = matrix_froebenius_norm(diff);
@@ -163,7 +165,7 @@ float calculate_inverse_tolerance(Matrix* A_T, Matrix* x){
     return tol;
 }
 
-Matrix* matrix_inverse_newton(Matrix* mat, size_t max_iter, float tol){
+Matrix* matrix_inverse_newton(Matrix* mat, size_t max_iter, float tol, unsigned char free){
     Matrix* X = matrix_create(mat->n_rows, mat->n_cols);
 
     // Initialize x_prev with 1.0s
@@ -175,21 +177,21 @@ Matrix* matrix_inverse_newton(Matrix* mat, size_t max_iter, float tol){
     }
  
     size_t iter = 0;
-    printf("Transposing A.\n");
-    Matrix* A_T = matrix_transpose(mat);
-    printf("Scaling and creating identity.\n");
+    Matrix* X_T = matrix_transpose(mat);
     Matrix* scaled_identity = scalar_product(create_identity_matrix(mat->n_cols), 2.0f, 1);
-    printf("INITIAL A_T_n_cols: %lu, X_n_rows: %lu\n", A_T->n_cols, X->n_rows);
-    printf("Entering loop.\n");
-    while (iter <= max_iter && calculate_inverse_tolerance(A_T, X) > tol){
+    printf("INITIAL X_T_n_cols: %lu, X_n_rows: %lu\n", X_T->n_cols, X->n_rows);
+    while (iter <= max_iter && calculate_inverse_tolerance(X_T, X) > tol){
         printf("Loop %lu.\n", iter);
-        printf("A_n_cols: %lu, X_n_rows: %lu\n", A_T->n_cols, X->n_rows);
-        X = matrix_multiply(X, matrix_subtract(scaled_identity, matrix_multiply(A_T, X, 0), 0), 1);
+        printf("X_T_n_cols: %lu, X_n_rows: %lu\n", X_T->n_cols, X->n_rows);
+
+        X = matrix_multiply(X, matrix_subtract(scaled_identity, matrix_multiply(X_T, X, 0), 0), 0);
         iter++;
     }
 
     matrix_destroy(&scaled_identity);
-    matrix_destroy(&A_T);
+    matrix_destroy(&X_T);
+    if (free) matrix_destroy(&mat);
+
     return X;
 };
 
