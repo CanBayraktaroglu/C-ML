@@ -27,10 +27,29 @@ void matrix_destroy(Matrix** mat){
 };
 
 void matrix_set(Matrix* mat, size_t i, size_t j, float val){
+    if (i >= mat->n_rows){
+        printf("row index exceeded matrix row number\n.");
+        exit(0);
+    }
+
+    if (j >= mat->n_cols){
+        printf("col index exceeded matrix col number\n.");
+        exit(0);
+    }
     mat->data[i * mat->n_cols + j] = val;
 };
 
 float matrix_get(Matrix* mat, size_t i, size_t j){
+    if (i >= mat->n_rows){
+        printf("row index exceeded matrix row number\n.");
+        exit(0);
+    }
+
+    if (j >= mat->n_cols){
+        printf("col index exceeded matrix col number\n.");
+        exit(0);
+    }
+
     return mat->data[i * mat->n_cols + j];
 };
 
@@ -96,7 +115,7 @@ Matrix* matrix_subtract(Matrix* a, Matrix* b, unsigned char free){
             matrix_set(result, i, j, matrix_get(a, i, j) - matrix_get(b, i, j));
         }
     }
-    if (free) matrix_destroy(&a); matrix_destroy(&b);
+    if (free) {matrix_destroy(&a); matrix_destroy(&b);}
     return result;
 };
 
