@@ -10,66 +10,67 @@
 typedef struct {
     size_t prev_layer_num_neurons;
     size_t num_neurons;
-    Matrix* (*act_fn)(Matrix* X, size_t prev_layer_num_neurons, size_t num_neurons);
+    void (*act_fn)(Matrix* X);
     Matrix* weights;
     Matrix* biases;
 }FeedForwardLayer;
 
 // ACTIVATION FUNCTIONS
-Matrix* relu(Matrix* X, size_t prev_layer_num_neurons, size_t num_neurons){
-    if (prev_layer_num_neurons){
-        X->n_rows = num_neurons;
-        X->n_cols = prev_layer_num_neurons;
-        for (size_t i = 0; i < num_neurons; i++){
-            for (size_t j = 0; j < prev_layer_num_neurons; j++){
+void relu(Matrix* X){
+    if (X->n_cols){        
+        for (size_t i = 0; i < X->n_rows; i++){
+            for (size_t j = 0; j < X->n_cols; j++){
                 if (matrix_get(X, i, j) >= 0) continue;
                 matrix_set(X, i, j, 0.0f);
             }
         }
+
     }
-    return X;
 };
 
-Matrix* sigmoid(Matrix* X, size_t prev_layer_num_neurons, size_t num_neurons){
-    if (prev_layer_num_neurons){
-        X->n_rows = num_neurons;
-        X->n_cols = prev_layer_num_neurons;
-        for (size_t i = 0; i < num_neurons; i++){
-            for (size_t j = 0; j < prev_layer_num_neurons; j++){
+void sigmoid(Matrix* X){
+    if (X->n_cols){
+  
+        for (size_t i = 0; i < X->n_rows; i++){
+            for (size_t j = 0; j < X->n_cols; j++){
                 double x = matrix_get(X, i, j);
                 matrix_set(X, i, j, 1/(1 + exp(-x)));
             }
         }
     }
-    return X;
 };
 
-Matrix* _tanh(Matrix* X, size_t prev_layer_num_neurons, size_t num_neurons){
-    if (prev_layer_num_neurons){
-        X->n_rows = num_neurons;
-        X->n_cols = prev_layer_num_neurons;
-        for (size_t i = 0; i < num_neurons; i++){
-            for (size_t j = 0; j < prev_layer_num_neurons; j++){
+void _tanh(Matrix* X){
+    if (X->n_cols){
+        for (size_t i = 0; i < X->n_rows; i++){
+            for (size_t j = 0; j < X->n_cols; j++){
                 double x = matrix_get(X, i, j);
                 matrix_set(X, i, j, exp(2*x - 1)/exp(2*x + 1));
             }
         }
     }
-    return X;
 };
 
 // Feed Forward Pass
-Matrix* feed_forward_pass(FeedForwardLayer* layer , Matrix* X){
+void feed_forward_pass(FeedForwardLayer* layer , Matrix* X){
     if (layer->prev_layer_num_neurons){
-        X = matrix_multiply(layer->weights, X, 0); // X = W*X | num_neurons x 1
-        X = matrix_add(X, layer->biases, 0); // X = X + B | num_neurons x 1 
-        X = layer->act_fn(X, layer->prev_layer_num_neurons, layer->num_neurons);
-    }
-    
-    return X;
+        Matrix* _X = matrix_copy(X);
+        Matrix* W = matrix_copy(layer->weights);
+        Matrix* b = matrix_copy(layer->biases);
+
+        matrix_multiply(W, _X, X, 1); // X = W*X | num_neurons x 1
+
+        _X = matrix_copy(X);
+        matrix_add(_X, b, X, 1); // X = X + B | num_neurons x 1
+
+        layer->act_fn(X);
+    }  
 };
 
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
+    if (layer == NULL) return;
+    matrix_destroy(&layer->weights);
+    matrix_destroy(&layer->biases);
     free(layer);
     layer = NULL;
 };
@@ -104,18 +105,5 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
 
     return layer;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif // __DL_H__
