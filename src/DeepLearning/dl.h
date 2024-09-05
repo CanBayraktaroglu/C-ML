@@ -7,14 +7,6 @@
 #include "matrix.h"
 #include <math.h>
 
-typedef struct {
-    size_t prev_layer_num_neurons;
-    size_t num_neurons;
-    void (*act_fn)(Matrix* X);
-    Matrix* weights;
-    Matrix* biases;
-}FeedForwardLayer;
-
 // ACTIVATION FUNCTIONS
 void relu(Matrix* X){
     if (X->n_cols){        
@@ -51,6 +43,17 @@ void _tanh(Matrix* X){
     }
 };
 
+
+// FEED FORWARD NEURAL NETWORK
+typedef struct {
+    size_t prev_layer_num_neurons;
+    size_t num_neurons;
+    void (*act_fn)(Matrix* X);
+    Matrix* weights;
+    Matrix* biases;
+}FeedForwardLayer;
+
+
 // Feed Forward Pass
 void feed_forward_pass(FeedForwardLayer* layer , Matrix* X){
     if (layer->prev_layer_num_neurons){
@@ -67,6 +70,7 @@ void feed_forward_pass(FeedForwardLayer* layer , Matrix* X){
     }  
 };
 
+// Garbage Collector Funcs
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
     if (layer == NULL) return;
     matrix_destroy(&layer->weights);
@@ -75,6 +79,7 @@ void destroy_feed_forward_layer(FeedForwardLayer* layer){
     layer = NULL;
 };
 
+// Allocate memory for FFNN
 FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
     FeedForwardLayer* layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
 
@@ -104,6 +109,68 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
 
 
     return layer;
+};
+
+// Sequential NN
+typedef struct{
+    size_t input_size;
+    size_t hidden_size;
+    size_t output_size;
+    size_t num_layers;
+    char layer_type;
+    char act_fn;
+    void* layers;
+}Sequential_NN;
+
+// Allocate memory on the heap for Sequential NN
+Sequential_NN* create_Sequential_NN(size_t input_size, size_t hidden_size, size_t output_size, size_t num_layers, char layer_type, char act_fn){
+    Sequential_NN* sequential_nn = (Sequential_NN*)calloc(1, sizeof(Sequential_NN));
+
+    sequential_nn->input_size = input_size;
+    sequential_nn->hidden_size = hidden_size;
+    sequential_nn->output_size = output_size;
+    sequential_nn->num_layers = num_layers;
+    sequential_nn->layer_type = layer_type;
+    sequential_nn->act_fn = act_fn;
+
+    return sequential_nn;
+};
+
+void initialize_sequential_nn(Sequential_NN* model){
+    if (model->num_layers < 2){
+        printf("At least 2 layers must be present\n.");
+        free(model);
+        model = NULL;
+        exit(0);
+    }
+
+    void** layer_ptr; 
+    switch(model->layer_type){
+        case 0: // Feed Forward
+            model->layers = (FeedForwardLayer*)calloc(model->num_layers, sizeof(FeedForwardLayer));
+            layer_ptr = (FeedForwardLayer**)&model->layers;
+
+            // Input layer
+            *layer_ptr = create_feed_forward_layer(0, model->input_size, model->act_fn);
+
+            // Hidden layers
+            for (size_t i = 1; i < model->num_layers - 1; i++){
+                size_t prev_layer_size = (*(layer_ptr) + i - 1)->num_neurons;
+                *(layer_ptr + i) = create_feed_forward_layer(prev_layer_size, model->hidden_size, model->act_fn);                   
+            }
+
+            // Output Layer
+            *(layer_ptr + model->num_layers - 1) = create_feed_forward_layer(model->hidden_size, model->output_size, model->act_fn);
+            break;
+    
+        default:
+            printf("Chosen layer type is not supported\n.");
+            exit(0);   
+    }
+};
+
+void destroy_sequential_nn(Sequential_NN* model){
+    return;
 };
 
 #endif // __DL_H__

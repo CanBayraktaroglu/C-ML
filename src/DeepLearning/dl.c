@@ -9,6 +9,7 @@ void main(void){
         {3},
         {4},
     };
+    
     Matrix* X = matrix_create_from_array(4, 1, arr);
     Matrix* _X = matrix_copy(X);
     FeedForwardLayer* layer_0 = create_feed_forward_layer(0, 4, 0);
