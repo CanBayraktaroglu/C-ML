@@ -44,7 +44,6 @@ void _tanh(Matrix* X){
     }
 };
 
-
 // FEED FORWARD NEURAL NETWORK
 typedef struct {
     size_t prev_layer_num_neurons;
@@ -55,18 +54,27 @@ typedef struct {
 }FeedForwardLayer;
 
 // Feed Forward Pass
-void feed_forward_pass(FeedForwardLayer* layer , Matrix* X){
+void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
     if (layer->prev_layer_num_neurons){
         Matrix* _X = matrix_copy(X);
         Matrix* W = matrix_copy(layer->weights);
         Matrix* b = matrix_copy(layer->biases);
 
         matrix_multiply(W, _X, X, 1); // X = W*X | num_neurons x 1
-
+        free(_X);
+        
         _X = matrix_copy(X);
         matrix_add(_X, b, X, 1); // X = X + B | num_neurons x 1
 
         layer->act_fn(X);
+
+        matrix_destroy(W);
+        free(W);
+        matrix_destroy(b);
+        free(b);
+        matrix_destroy(_X);
+        free(_X);
+
     }  
 };
 
