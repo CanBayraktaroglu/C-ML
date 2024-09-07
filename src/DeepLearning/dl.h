@@ -297,7 +297,7 @@ void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
                 feed_forward_pass(ff_layer_ptr, x);
                 break;
             default:
-                printf("Layer Type not supported.\n");
+                printf("Layer Type not supported.");
                 break;
         }
         //matrix_print(x);
