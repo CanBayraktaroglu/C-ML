@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "matrix.h"
 #include <math.h>
+#include <assert.h>
 
 // ACTIVATION FUNCTIONS
 void relu(Matrix* X){
@@ -53,7 +54,6 @@ typedef struct {
     Matrix* biases;
 }FeedForwardLayer;
 
-
 // Feed Forward Pass
 void feed_forward_pass(FeedForwardLayer* layer , Matrix* X){
     if (layer->prev_layer_num_neurons){
@@ -73,10 +73,12 @@ void feed_forward_pass(FeedForwardLayer* layer , Matrix* X){
 // Garbage Collector Funcs
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
     if (layer == NULL) return;
-    matrix_destroy(&layer->weights);
-    matrix_destroy(&layer->biases);
-    free(layer);
-    layer = NULL;
+    matrix_destroy(layer->weights);
+    free(layer->weights);
+    layer->weights = NULL;
+    matrix_destroy(layer->biases);
+    free(layer->biases);
+    layer->biases = NULL;
 };
 
 // Allocate memory for FFNN
@@ -88,8 +90,13 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
     layer->num_neurons = num_neurons;
 
     // initialize biases and weights on the heap
-    layer->biases = matrix_create(num_neurons, 1); // num_neurons x 1
-    layer->weights = matrix_create(num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
+    Matrix* b = NULL;
+    matrix_create(&b, num_neurons, 1); // num_neurons x 1
+    layer->biases = b;
+
+    Matrix* W = NULL;
+    matrix_create(&W, num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
+    layer->weights = W;
 
     switch(act_fn_mapping){
         case 0:
@@ -111,15 +118,57 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
     return layer;
 };
 
+void initialize_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
+    // Set the neuron numbers
+    (*layer_dptr)->prev_layer_num_neurons = prev_layer_num_neurons;
+    (*layer_dptr)->num_neurons = num_neurons;
+
+    // initialize biases and weights on the heap
+    (*layer_dptr)->biases = NULL;
+    matrix_create(&((*layer_dptr)->biases), num_neurons, 1); // num_neurons x 1
+
+    (*layer_dptr)->weights = NULL;
+    matrix_create(&((*layer_dptr)->weights), num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
+
+    switch(act_fn_mapping){
+        case 0:
+            (*layer_dptr)->act_fn = relu;
+            break;
+        case 1:
+            (*layer_dptr)->act_fn = sigmoid;
+            break;
+        case 2:
+            (*layer_dptr)->act_fn = _tanh;
+            break;
+        default:
+            printf("Selected mapping for the activation function does not exist.\n");
+            exit(0);
+    };
+};
+
+typedef enum {
+    FEED_FORWARD,
+    CONVOLUTIONAL,
+    //add more types as needed
+}LayerType;
+
+typedef union {
+    FeedForwardLayer* ff_layer;
+    void* layer;
+}LayerUnion;
+
+typedef struct {
+    LayerType type;
+    LayerUnion layer;
+}Layer;
+
 // Sequential NN
 typedef struct{
     size_t input_size;
     size_t hidden_size;
     size_t output_size;
     size_t num_layers;
-    char layer_type;
-    char act_fn;
-    void* layers;
+    Layer* layers;
 }Sequential_NN;
 
 // Allocate memory on the heap for Sequential NN
@@ -130,47 +179,79 @@ Sequential_NN* create_Sequential_NN(size_t input_size, size_t hidden_size, size_
     sequential_nn->hidden_size = hidden_size;
     sequential_nn->output_size = output_size;
     sequential_nn->num_layers = num_layers;
-    sequential_nn->layer_type = layer_type;
-    sequential_nn->act_fn = act_fn;
 
     return sequential_nn;
 };
 
-void initialize_sequential_nn(Sequential_NN* model){
-    if (model->num_layers < 2){
-        printf("At least 2 layers must be present\n.");
-        free(model);
-        model = NULL;
+void init_sequential_nn(Sequential_NN** model, size_t input_size, size_t hidden_size, size_t output_size) {
+    
+    *model = (Sequential_NN*)calloc(1, sizeof(Sequential_NN)); 
+    Sequential_NN* model_ptr = *model;
+    
+    if (*model == NULL) {
+        printf("Failed to allocate memory for model\n");
+        exit(1);
+    }
+
+    // Set the attributes
+    model_ptr->input_size = input_size;
+    model_ptr->hidden_size = hidden_size;
+    model_ptr->output_size = output_size;
+    model_ptr->num_layers = 0;
+    
+    // Initialize layers as NULL
+    model_ptr->layers = NULL;
+
+    printf("Sequential NN INITIALIZED.\n");
+};
+
+void destroy_sequential_nn(Sequential_NN* model_ptr){
+    if (model_ptr == NULL) return;
+    
+    for (size_t i = 0; i < model_ptr->num_layers; i++){
+        Layer* layer_ptr = model_ptr->layers + i;
+        
+        switch(layer_ptr->type){
+            case FEED_FORWARD:
+                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                destroy_feed_forward_layer(ff_layer_ptr);
+                free(ff_layer_ptr);
+                ff_layer_ptr = NULL;
+                break;
+            default:
+                printf("Specified layer type is not supported");
+                break;
+        }        
+    }    
+
+    free(model_ptr->layers);
+    model_ptr->layers = NULL;
+};
+
+void add_feed_forward_layer(Sequential_NN* model_ptr, size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
+    if (model_ptr == NULL){
+        printf("Passed model pointer is NULL.\n");
         exit(0);
     }
+    // Increment number of layers
+    model_ptr->num_layers++;
 
-    void** layer_ptr; 
-    switch(model->layer_type){
-        case 0: // Feed Forward
-            model->layers = (FeedForwardLayer*)calloc(model->num_layers, sizeof(FeedForwardLayer));
-            layer_ptr = (FeedForwardLayer**)&model->layers;
-
-            // Input layer
-            *layer_ptr = create_feed_forward_layer(0, model->input_size, model->act_fn);
-
-            // Hidden layers
-            for (size_t i = 1; i < model->num_layers - 1; i++){
-                size_t prev_layer_size = (*(layer_ptr) + i - 1)->num_neurons;
-                *(layer_ptr + i) = create_feed_forward_layer(prev_layer_size, model->hidden_size, model->act_fn);                   
-            }
-
-            // Output Layer
-            *(layer_ptr + model->num_layers - 1) = create_feed_forward_layer(model->hidden_size, model->output_size, model->act_fn);
-            break;
-    
-        default:
-            printf("Chosen layer type is not supported\n.");
-            exit(0);   
+    if (model_ptr->layers == NULL){
+        model_ptr->layers = (Layer*)malloc(sizeof(Layer));
+    }else{
+        model_ptr->layers = (Layer*)realloc(model_ptr->layers, model_ptr->num_layers * sizeof(Layer));
     }
-};
 
-void destroy_sequential_nn(Sequential_NN* model){
-    return;
-};
+    // Initialize feed forward neural layer
+    (model_ptr->layers + model_ptr->num_layers - 1)->type = FEED_FORWARD;
+    (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
+    FeedForwardLayer* layer_ptr = (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer;
+    
+    if (layer_ptr == NULL){
+        printf("Layer ptr points to NULL.\n Feed forward layer cannot be added.\n");
+        exit(0);
+    } 
+    initialize_feed_forward_layer(&layer_ptr, prev_layer_num_neurons, num_neurons, act_fn_mapping);
+}
 
 #endif // __DL_H__

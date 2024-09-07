@@ -11,12 +11,15 @@ typedef struct {
     size_t n_cols;
 } Matrix;
 
-Matrix* matrix_create(size_t n_rows, size_t n_cols){
-    Matrix* mat = (Matrix*)malloc(sizeof(Matrix));
-    mat->data = (double*)calloc(n_rows * n_cols , sizeof(double));
-    mat->n_rows = n_rows;
-    mat->n_cols = n_cols;
-    return mat;
+void matrix_create(Matrix** mat ,size_t n_rows, size_t n_cols){
+    *mat = (Matrix*)malloc(sizeof(Matrix));
+    if (mat == NULL){
+        printf("Failed to allocate memory for matrix.\n");
+        exit(1);
+    }
+    (*mat)->data = (double*)calloc(n_rows * n_cols , sizeof(double));
+    (*mat)->n_rows = n_rows;
+    (*mat)->n_cols = n_cols;
 };
 
 void matrix_realloc(Matrix* mat, size_t n_rows, size_t n_cols){
@@ -25,13 +28,11 @@ void matrix_realloc(Matrix* mat, size_t n_rows, size_t n_cols){
     mat->n_cols = n_cols;
 };
 
-void matrix_destroy(Matrix** mat){
-    if (*mat == NULL) return;
+void matrix_destroy(Matrix* mat){
+    if (mat == NULL) return;
 
-    free((*mat)->data);
-    (*mat)->data = NULL;
-    free(*mat);
-    *mat = NULL;
+    free(mat->data);
+    mat->data = NULL;
 };
 
 void matrix_set(Matrix* mat, size_t i, size_t j, double val){
@@ -77,7 +78,8 @@ void matrix_transpose_inplace(Matrix* mat){
 };
 
 Matrix* matrix_transpose(Matrix* mat){
-    Matrix* temp = matrix_create(mat->n_cols, mat->n_rows);
+    Matrix* temp = NULL;
+    matrix_create(&temp, mat->n_cols, mat->n_rows);
     for(size_t i = 0; i < mat->n_rows; i++){
         for(size_t j = 0; j < mat->n_cols; j++){
             matrix_set(temp, j, i, matrix_get(mat, i, j));
@@ -87,13 +89,14 @@ Matrix* matrix_transpose(Matrix* mat){
 };
 
 Matrix* scalar_product(Matrix* mat, double scalar, unsigned char free){
-    Matrix* result = matrix_create(mat->n_rows, mat->n_cols);
+    Matrix* result = NULL;
+    matrix_create(&result, mat->n_rows, mat->n_cols);
     for (size_t i = 0; i < mat->n_rows; i++){
         for (size_t j = 0; j < mat->n_cols; j++){
             matrix_set(result, i, j, scalar * matrix_get(mat, i, j));
         }
     }
-    if (free) matrix_destroy(&mat);
+    if (free) matrix_destroy(mat);
     return result;
 };
 
@@ -121,7 +124,7 @@ void matrix_add(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
             matrix_set(output, i, j, matrix_get(a, i, j) + matrix_get(b, i, j));
         }
     }
-    if (free) {matrix_destroy(&a); matrix_destroy(&b);}
+    if (free) {matrix_destroy(a); matrix_destroy(b);}
 };
 
 void matrix_subtract(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
@@ -147,7 +150,7 @@ void matrix_subtract(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
             matrix_set(output, i, j, matrix_get(a, i, j) - matrix_get(b, i, j));
         }
     }
-    if (free) {matrix_destroy(&a); matrix_destroy(&b);}
+    if (free) {matrix_destroy(a); matrix_destroy(b);}
 };
 
 void matrix_print(Matrix* mat){
@@ -188,19 +191,21 @@ void matrix_multiply(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
         }
     }
 
-    if (free){ matrix_destroy(&a); matrix_destroy(&b);}
+    if (free){ matrix_destroy(a); matrix_destroy(b);}
 };
 
 
 Matrix* create_identity_matrix(size_t n){
-    Matrix* mat = matrix_create(n, n);
+    Matrix* mat = NULL;
+    matrix_create(&mat, n, n);
     for (size_t i = 0; i < n; i++){
         matrix_set(mat, i, i, 1);
     }
     return mat;
 };
 Matrix* matrix_copy(Matrix* mat){
-    Matrix* copy = matrix_create(mat->n_rows, mat->n_cols);
+    Matrix* copy = NULL;
+    matrix_create(&copy, mat->n_rows, mat->n_cols);
     memcpy(copy->data, mat->data, mat->n_rows * mat->n_cols * sizeof(double));
     return copy;
 };
@@ -261,7 +266,8 @@ Matrix* matrix_create_from_array(size_t n_rows, size_t n_cols, double (*arr)[n_c
         printf("Array to be converted to matrix points to an empty address.\n");
         exit(0);
     }
-    Matrix* mat = matrix_create(n_rows, n_cols);
+    Matrix* mat = NULL;
+    matrix_create(&mat, n_rows, n_cols);
     for (size_t i = 0; i < n_rows; i++){
         for (size_t j = 0; j < n_cols; j++){
             matrix_set(mat, i, j, arr[i][j]);

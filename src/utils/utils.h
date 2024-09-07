@@ -511,7 +511,8 @@ float* dot_product(float* a, float* b, size_t n){
     return result;
 };
 Matrix* outer_product(float* a, float* b, size_t n){
-    Matrix* matrix = matrix_create(n, n);
+    Matrix* matrix = NULL;
+    matrix_create(&matrix, n, n);
     for (size_t i = 0; i < n; i++){
         for (size_t j = 0; j < n; j++){
             matrix_set(matrix, i, j, a[i] * b[j]);
