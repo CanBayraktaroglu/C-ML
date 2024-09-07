@@ -118,7 +118,7 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
     return layer;
 };
 
-void initialize_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
+void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
     // Set the neuron numbers
     (*layer_dptr)->prev_layer_num_neurons = prev_layer_num_neurons;
     (*layer_dptr)->num_neurons = num_neurons;
@@ -127,8 +127,22 @@ void initialize_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_la
     (*layer_dptr)->biases = NULL;
     matrix_create(&((*layer_dptr)->biases), num_neurons, 1); // num_neurons x 1
 
+    // Set biases to 1.0
+    for (size_t i = 0; i < (*layer_dptr)->biases->n_rows; i++){
+        for (size_t j = 0; j < (*layer_dptr)->biases->n_cols; j++){
+            matrix_set((*layer_dptr)->biases, i, j, 1.0);
+        }
+    }
+
     (*layer_dptr)->weights = NULL;
     matrix_create(&((*layer_dptr)->weights), num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
+    
+    // Set weights to 1.0
+    for (size_t i = 0; i < (*layer_dptr)->weights->n_rows; i++){
+        for (size_t j = 0; j < (*layer_dptr)->weights->n_cols; j++){
+            matrix_set((*layer_dptr)->weights, i, j, 1.0);
+        }
+    }
 
     switch(act_fn_mapping){
         case 0:
@@ -251,7 +265,43 @@ void add_feed_forward_layer(Sequential_NN* model_ptr, size_t prev_layer_num_neur
         printf("Layer ptr points to NULL.\n Feed forward layer cannot be added.\n");
         exit(0);
     } 
-    initialize_feed_forward_layer(&layer_ptr, prev_layer_num_neurons, num_neurons, act_fn_mapping);
-}
+    init_feed_forward_layer(&layer_ptr, prev_layer_num_neurons, num_neurons, act_fn_mapping);
+};
+
+void print_sequential_nn(Sequential_NN* model_ptr){
+    printf("LAYERS:\n");
+    for (size_t i = 0; i < model_ptr->num_layers; i++){
+        
+        Layer* layer_ptr = model_ptr->layers + i;
+        printf("    Idx: %lu ", i);
+        
+        switch(layer_ptr->type){
+            case FEED_FORWARD:
+                printf("Type: FEED FORWARD, # Neurons: %lu ", layer_ptr->layer.ff_layer->num_neurons);
+                break;
+            default:
+                printf("TYPE NOT SUPPORTED.");
+                break;
+        }
+        
+        printf("\n");
+    }
+};
+
+void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
+    for (size_t i = 0; i < model_ptr->num_layers; i++){
+        Layer* layer_ptr = (model_ptr->layers + i);
+        switch (layer_ptr->type){
+            case FEED_FORWARD:
+                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                feed_forward_pass(ff_layer_ptr, x);
+                break;
+            default:
+                printf("Layer Type not supported.\n");
+                break;
+        }
+        //matrix_print(x);
+    }
+};
 
 #endif // __DL_H__
