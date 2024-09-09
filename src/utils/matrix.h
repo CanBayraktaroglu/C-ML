@@ -88,19 +88,23 @@ Matrix* matrix_transpose(Matrix* mat){
     return temp;
 };
 
-Matrix* scalar_product(Matrix* mat, double scalar, unsigned char free){
-    Matrix* result = NULL;
-    matrix_create(&result, mat->n_rows, mat->n_cols);
+void scalar_product(Matrix* mat, double scalar, Matrix** output, unsigned char free){
+    if (*output == NULL){
+        matrix_create(output, mat->n_rows, mat->n_cols);
+    }
+    else {
+        matrix_realloc(*output, mat->n_rows, mat->n_cols);
+    }
+
     for (size_t i = 0; i < mat->n_rows; i++){
         for (size_t j = 0; j < mat->n_cols; j++){
-            matrix_set(result, i, j, scalar * matrix_get(mat, i, j));
+            matrix_set(*output, i, j, scalar * matrix_get(mat, i, j));
         }
     }
     if (free) matrix_destroy(mat);
-    return result;
 };
 
-void matrix_add(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
+void matrix_add(Matrix* a, Matrix* b, Matrix** output, unsigned char free){
     if (a == NULL){
         printf("Matrix a is pointing to an empty address\n.");
         return;
@@ -115,19 +119,23 @@ void matrix_add(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
         printf("Matrix dimensions do not match for addition\n.");
         exit(0);
     }
-
-    // reallocate memory for output
-    matrix_realloc(output, a->n_rows, a->n_cols);
+    if (*output == NULL){
+        matrix_create(output, a->n_rows, a->n_cols);
+    }
+    else {
+        // reallocate memory for output
+        matrix_realloc(*output, a->n_rows, a->n_cols);
+    }
 
     for (size_t i = 0; i < a->n_rows; i++){
         for (size_t j = 0; j < a->n_cols; j++){
-            matrix_set(output, i, j, matrix_get(a, i, j) + matrix_get(b, i, j));
+            matrix_set(*output, i, j, matrix_get(a, i, j) + matrix_get(b, i, j));
         }
     }
     if (free) {matrix_destroy(a); matrix_destroy(b);}
 };
 
-void matrix_subtract(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
+void matrix_subtract(Matrix* a, Matrix* b, Matrix** output, unsigned char free){
     if (a == NULL){
         printf("Matrix a is pointing to an empty address\n.");
         return;
@@ -142,12 +150,17 @@ void matrix_subtract(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
         printf("Matrix dimensions do not match for subtraction.\n");
         exit(0);
     }
-    // reallocate memory for output
-    matrix_realloc(output, a->n_rows, a->n_cols);
+    if (*output == NULL){
+        matrix_create(output, a->n_rows, a->n_cols);
+    }
+    else {
+        // reallocate memory for output
+        matrix_realloc(*output, a->n_rows, a->n_cols);
+    }
     
     for (size_t i = 0; i < a->n_rows; i++){
         for (size_t j = 0; j < a->n_cols; j++){
-            matrix_set(output, i, j, matrix_get(a, i, j) - matrix_get(b, i, j));
+            matrix_set(*output, i, j, matrix_get(a, i, j) - matrix_get(b, i, j));
         }
     }
     if (free) {matrix_destroy(a); matrix_destroy(b);}
@@ -162,7 +175,7 @@ void matrix_print(Matrix* mat){
     }
 };
 
-void matrix_multiply(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
+void matrix_multiply(Matrix* a, Matrix* b, Matrix** output, unsigned char free){
     if (a == NULL){
         printf("Matrix a is pointing to an empty address\n.");
         return;
@@ -178,8 +191,13 @@ void matrix_multiply(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
         exit(0);
     }
     
-    // reallocate memory for output 
-    matrix_realloc(output, a->n_rows, b->n_cols);    
+    // reallocate memory for output
+    if (*output == NULL){
+        matrix_create(output, a->n_rows, b->n_cols);
+    }
+    else {
+        matrix_realloc(*output, a->n_rows, b->n_cols);    
+    } 
     
     for (size_t i = 0; i < a->n_rows; i++){
         for (size_t j = 0; j < b->n_cols; j++){
@@ -187,13 +205,20 @@ void matrix_multiply(Matrix* a, Matrix* b, Matrix* output, unsigned char free){
             for (size_t k = 0; k < a->n_cols; k++){
                 sum += matrix_get(a, i, k) * matrix_get(b, k, j);
             }
-            matrix_set(output, i, j, sum);
+            matrix_set(*output, i, j, sum);
         }
     }
 
     if (free){ matrix_destroy(a); matrix_destroy(b);}
 };
 
+void matrix_abs(Matrix* X){
+    for (size_t i = 0; i < X->n_rows; i++){
+        for (size_t j = 0; j < X->n_cols; j++){
+            matrix_set(X, i, j, abs(matrix_get(X, i, j)));
+        }
+    }
+};
 
 Matrix* create_identity_matrix(size_t n){
     Matrix* mat = NULL;
@@ -218,6 +243,14 @@ double matrix_froebenius_norm(Matrix* mat){
         }
     }
     return sqrt(sum);
+};
+
+void matrix_sqrt(Matrix* X){
+    for (size_t i = 0; i < X->n_rows; i++){
+        for (size_t j = 0; j < X->n_cols; j++){
+            matrix_set(X, i, j, sqrt(matrix_get(X, i, j)));
+        }
+    }
 };
 
 /* double calculate_inverse_tolerance(Matrix* A_T, Matrix* x){

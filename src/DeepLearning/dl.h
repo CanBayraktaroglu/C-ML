@@ -8,6 +8,57 @@
 #include <math.h>
 #include <assert.h>
 
+// Loss Functions
+void mean_squared_loss(Matrix* prediction, Matrix* label, Matrix** loss){
+    if (prediction->n_rows != label->n_rows || prediction->n_cols != label->n_cols){
+        printf("Matrix sizes do not match\n.");
+        matrix_destroy(prediction);
+        matrix_destroy(label);
+        free(prediction);
+        prediction = NULL;
+        free(label);
+        label = NULL;
+        exit(0);
+    }
+
+    matrix_subtract(prediction, label, loss, 0);
+    Matrix* _loss = NULL;
+    matrix_multiply(*loss, *loss, &_loss, 0);
+    matrix_sqrt(_loss);
+    matrix_destroy(*loss);
+    free(*loss);
+    *loss = _loss;    
+};
+
+void L1_loss(Matrix* prediction, Matrix* label, Matrix** loss){
+    if (prediction->n_rows != label->n_rows || prediction->n_cols != label->n_cols){
+        printf("Matrix sizes do not match\n.");
+        matrix_destroy(prediction);
+        matrix_destroy(label);
+        free(prediction);
+        prediction = NULL;
+        free(label);
+        label = NULL;
+        exit(0);
+    }
+
+    matrix_subtract(prediction, label, loss, 0);
+    Matrix* mat = NULL;
+    matrix_create(&mat, label->n_rows, 1);
+    Matrix* output = NULL;
+    matrix_multiply(*loss, mat, &output, 0);
+
+    // Free allocated heap memory
+    matrix_destroy(mat);
+    free(mat);
+    mat = NULL;
+
+    matrix_destroy(*loss);
+    free(*loss);
+    *loss = output;
+
+};
+
 // ACTIVATION FUNCTIONS
 void relu(Matrix* X){
     if (X->n_cols){        
@@ -44,13 +95,19 @@ void _tanh(Matrix* X){
     }
 };
 
+typedef struct{
+    void (*actfn)(Matrix* X);
+}actfn_utils;
+
 // FEED FORWARD NEURAL NETWORK
 typedef struct {
     size_t prev_layer_num_neurons;
     size_t num_neurons;
     void (*act_fn)(Matrix* X);
     Matrix* weights;
+    Matrix* grad_W;
     Matrix* biases;
+    Matrix* grad_b;
 }FeedForwardLayer;
 
 // Feed Forward Pass
@@ -60,11 +117,11 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
         Matrix* W = matrix_copy(layer->weights);
         Matrix* b = matrix_copy(layer->biases);
 
-        matrix_multiply(W, _X, X, 1); // X = W*X | num_neurons x 1
+        matrix_multiply(W, _X, &X, 0); // X = W*X | num_neurons x 1
+        matrix_destroy(_X);
         free(_X);
-        
         _X = matrix_copy(X);
-        matrix_add(_X, b, X, 1); // X = X + B | num_neurons x 1
+        matrix_add(_X, b, &X, 0); // X = X + B | num_neurons x 1
 
         layer->act_fn(X);
 
@@ -78,15 +135,25 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
     }  
 };
 
+void feed_backward_pass(FeedForwardLayer* layer, Matrix* grad_next){
+    return;    
+};
+
 // Garbage Collector Funcs
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
     if (layer == NULL) return;
+    
     matrix_destroy(layer->weights);
     free(layer->weights);
     layer->weights = NULL;
+    
     matrix_destroy(layer->biases);
     free(layer->biases);
     layer->biases = NULL;
+
+    matrix_destroy(layer->grad_W);
+    free(layer->grad_W);
+    layer->grad_W = NULL;
 };
 
 // Allocate memory for FFNN
@@ -98,13 +165,14 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
     layer->num_neurons = num_neurons;
 
     // initialize biases and weights on the heap
-    Matrix* b = NULL;
-    matrix_create(&b, num_neurons, 1); // num_neurons x 1
-    layer->biases = b;
+    layer->biases = NULL;
+    matrix_create(&(layer->biases), num_neurons, 1); // num_neurons x 1
+    layer->weights = NULL;
+    matrix_create(&(layer->weights), num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
 
-    Matrix* W = NULL;
-    matrix_create(&W, num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
-    layer->weights = W;
+    // Initialize weight_grad
+    layer->grad_W = NULL;
+    matrix_create(&(layer->grad_W), num_neurons, prev_layer_num_neurons);
 
     switch(act_fn_mapping){
         case 0:
@@ -121,8 +189,6 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
             destroy_feed_forward_layer(layer);
             exit(0);
     };
-
-
     return layer;
 };
 
@@ -131,7 +197,7 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_nu
     (*layer_dptr)->prev_layer_num_neurons = prev_layer_num_neurons;
     (*layer_dptr)->num_neurons = num_neurons;
 
-    // initialize biases and weights on the heap
+    // initialize biases on the heap
     (*layer_dptr)->biases = NULL;
     matrix_create(&((*layer_dptr)->biases), num_neurons, 1); // num_neurons x 1
 
@@ -142,6 +208,7 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_nu
         }
     }
 
+    // Initalize weights
     (*layer_dptr)->weights = NULL;
     matrix_create(&((*layer_dptr)->weights), num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
     
@@ -151,6 +218,10 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_nu
             matrix_set((*layer_dptr)->weights, i, j, 1.0);
         }
     }
+
+    // initalize weight gradients
+    (*layer_dptr)->grad_W = NULL;
+    matrix_create(&((*layer_dptr)->grad_W), num_neurons, prev_layer_num_neurons);
 
     switch(act_fn_mapping){
         case 0:
