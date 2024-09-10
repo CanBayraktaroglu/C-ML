@@ -11,7 +11,7 @@ typedef struct {
     size_t n_cols;
 } Matrix;
 
-void matrix_create(Matrix** mat ,size_t n_rows, size_t n_cols){
+void matrix_create(Matrix** mat , const size_t n_rows, const size_t n_cols){
     *mat = (Matrix*)malloc(sizeof(Matrix));
     if (mat == NULL){
         printf("Failed to allocate memory for matrix.\n");
@@ -22,7 +22,7 @@ void matrix_create(Matrix** mat ,size_t n_rows, size_t n_cols){
     (*mat)->n_cols = n_cols;
 };
 
-void matrix_realloc(Matrix* mat, size_t n_rows, size_t n_cols){
+void matrix_realloc(Matrix* mat, const size_t n_rows, const size_t n_cols){
     mat->data = (double*) realloc(mat->data, n_rows * n_cols * sizeof(double));
     mat->n_rows = n_rows;
     mat->n_cols = n_cols;
@@ -35,7 +35,7 @@ void matrix_destroy(Matrix* mat){
     mat->data = NULL;
 };
 
-void matrix_set(Matrix* mat, size_t i, size_t j, double val){
+void matrix_set(Matrix* mat,const size_t i,const size_t j,const double val){
     if (i >= mat->n_rows){
         printf("row index exceeded matrix row number\n.");
         exit(0);
@@ -48,7 +48,7 @@ void matrix_set(Matrix* mat, size_t i, size_t j, double val){
     mat->data[i * mat->n_cols + j] = val;
 };
 
-double matrix_get(Matrix* mat, size_t i, size_t j){
+double matrix_get(const Matrix* mat, const size_t i, const size_t j){
     if (i >= mat->n_rows){
         printf("row index exceeded matrix row number\n.");
         exit(0);
@@ -88,7 +88,7 @@ Matrix* matrix_transpose(Matrix* mat){
     return temp;
 };
 
-void scalar_product(Matrix* mat, double scalar, Matrix** output, unsigned char free){
+void scalar_product(Matrix* mat, const double scalar, Matrix** output, const unsigned char free){
     if (*output == NULL){
         matrix_create(output, mat->n_rows, mat->n_cols);
     }
@@ -104,7 +104,7 @@ void scalar_product(Matrix* mat, double scalar, Matrix** output, unsigned char f
     if (free) matrix_destroy(mat);
 };
 
-void matrix_add(Matrix* a, Matrix* b, Matrix** output, unsigned char free){
+void matrix_add(Matrix* a, Matrix* b, Matrix** output, const unsigned char free){
     if (a == NULL){
         printf("Matrix a is pointing to an empty address\n.");
         return;
@@ -135,7 +135,7 @@ void matrix_add(Matrix* a, Matrix* b, Matrix** output, unsigned char free){
     if (free) {matrix_destroy(a); matrix_destroy(b);}
 };
 
-void matrix_subtract(Matrix* a, Matrix* b, Matrix** output, unsigned char free){
+void matrix_subtract(Matrix* a, Matrix* b, Matrix** output, const unsigned char free){
     if (a == NULL){
         printf("Matrix a is pointing to an empty address\n.");
         return;
@@ -175,7 +175,7 @@ void matrix_print(Matrix* mat){
     }
 };
 
-void matrix_multiply(Matrix* a, Matrix* b, Matrix** output, unsigned char free){
+void matrix_multiply(Matrix* a, Matrix* b, Matrix** output, const unsigned char free){
     if (a == NULL){
         printf("Matrix a is pointing to an empty address\n.");
         return;
@@ -220,7 +220,7 @@ void matrix_abs(Matrix* X){
     }
 };
 
-Matrix* create_identity_matrix(size_t n){
+Matrix* create_identity_matrix(const size_t n){
     Matrix* mat = NULL;
     matrix_create(&mat, n, n);
     for (size_t i = 0; i < n; i++){
@@ -294,7 +294,7 @@ void matrix_sqrt(Matrix* X){
 };
  */
 
-Matrix* matrix_create_from_array(size_t n_rows, size_t n_cols, double (*arr)[n_cols]){
+Matrix* matrix_create_from_array(const size_t n_rows, const size_t n_cols, const double (*arr)[n_cols]){
     if (arr == NULL){
         printf("Array to be converted to matrix points to an empty address.\n");
         exit(0);
@@ -307,7 +307,9 @@ Matrix* matrix_create_from_array(size_t n_rows, size_t n_cols, double (*arr)[n_c
         }
     }
 
+
+
     return mat;
-}
+};
 
 #endif // __MATRIX_H__

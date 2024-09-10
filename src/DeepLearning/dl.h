@@ -23,10 +23,13 @@ void mean_squared_loss(Matrix* prediction, Matrix* label, Matrix** loss){
 
     matrix_subtract(prediction, label, loss, 0);
     Matrix* _loss = NULL;
-    matrix_multiply(*loss, *loss, &_loss, 0);
+    Matrix* loss_T = matrix_transpose(*loss);
+    matrix_multiply(loss_T, *loss, &_loss, 0);
     matrix_sqrt(_loss);
     matrix_destroy(*loss);
     free(*loss);
+    matrix_destroy(loss_T);
+    free(loss_T);
     *loss = _loss;    
 };
 
@@ -135,9 +138,7 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
     }  
 };
 
-void feed_backward_pass(FeedForwardLayer* layer, Matrix* grad_next){
-    return;    
-};
+
 
 // Garbage Collector Funcs
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
