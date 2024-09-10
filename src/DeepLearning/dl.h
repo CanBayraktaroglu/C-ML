@@ -75,6 +75,19 @@ void relu(Matrix* X){
     }
 };
 
+void backward_relu(Matrix* Z, Matrix** da_dz){
+    if (*da_dz == NULL){
+        matrix_create(da_dz, Z->n_rows, Z->n_cols);
+    }
+
+    for (size_t i = 0; i < Z->n_rows; i++){
+        for (size_t j = 0; j < Z->n_cols; j++){
+            if (matrix_get(Z, i, j) <= 0) continue;
+            matrix_set(*da_dz, i, j, 1.0);
+        }
+    }
+};
+
 void sigmoid(Matrix* X){
     if (X->n_cols){
   
@@ -85,6 +98,19 @@ void sigmoid(Matrix* X){
             }
         }
     }
+};
+
+void backward_sigmoid(Matrix* Z, Matrix** da_dz){
+    if (*da_dz == NULL){
+        matrix_create(da_dz, Z->n_rows, Z->n_cols);
+    }
+
+    // da/dz = sigmoid(Z) * (1-sigmoid(Z))
+    Matrix* _Z = NULL;
+    
+    
+
+
 };
 
 void _tanh(Matrix* X){
@@ -98,6 +124,10 @@ void _tanh(Matrix* X){
     }
 };
 
+void linear(Matrix* X){
+  
+};
+
 typedef struct{
     void (*actfn)(Matrix* X);
 }actfn_utils;
@@ -107,6 +137,7 @@ typedef struct {
     size_t prev_layer_num_neurons;
     size_t num_neurons;
     void (*act_fn)(Matrix* X);
+    char act_fn_mapping;
     Matrix* weights;
     Matrix* grad_W;
     Matrix* biases;
@@ -136,6 +167,14 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
         free(_X);
 
     }  
+};
+
+void set_gradients_feed_forward(FeedForwardLayer* layer, Matrix* X){
+    Matrix* da_dz = NULL;
+    switch(layer->act_fn_mapping){
+        case 1: // relu
+            ; 
+    }
 };
 
 
@@ -177,12 +216,15 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
 
     switch(act_fn_mapping){
         case 0:
-            layer->act_fn = relu;
+            layer->act_fn = linear;
             break;
         case 1:
-            layer->act_fn = sigmoid;
+            layer->act_fn = relu;
             break;
         case 2:
+            layer->act_fn = sigmoid;
+            break;
+        case 3:
             layer->act_fn = _tanh;
             break;
         default:
@@ -223,6 +265,9 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_nu
     // initalize weight gradients
     (*layer_dptr)->grad_W = NULL;
     matrix_create(&((*layer_dptr)->grad_W), num_neurons, prev_layer_num_neurons);
+
+    // set act_fn_mapping
+    (*layer_dptr)->act_fn_mapping = act_fn_mapping;
 
     switch(act_fn_mapping){
         case 0:
