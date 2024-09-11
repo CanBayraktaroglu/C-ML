@@ -107,10 +107,6 @@ void backward_sigmoid(Matrix* Z, Matrix** da_dz){
 
     // da/dz = sigmoid(Z) * (1-sigmoid(Z))
     Matrix* _Z = NULL;
-    
-    
-
-
 };
 
 void _tanh(Matrix* X){
@@ -125,7 +121,6 @@ void _tanh(Matrix* X){
 };
 
 void linear(Matrix* X){
-  
 };
 
 typedef struct{
@@ -169,15 +164,20 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
     }  
 };
 
-void set_gradients_feed_forward(FeedForwardLayer* layer, Matrix* X){
+void set_gradients_feed_forward_layer(FeedForwardLayer* layer, Matrix* X){
     Matrix* da_dz = NULL;
     switch(layer->act_fn_mapping){
-        case 1: // relu
-            ; 
+        case 0:
+            matrix_create(da_dz, layer->biases->n_rows, layer->biases->n_cols); 
+        case 1: // relu            
+            for (size_t i = 0; i < layer->biases->n_rows; i++){
+                for (size_t j = 0; j < layer->biases->n_cols; j++){
+                    if ()
+                }
+            }
+            break; 
     }
 };
-
-
 
 // Garbage Collector Funcs
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
