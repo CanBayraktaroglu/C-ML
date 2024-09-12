@@ -20,15 +20,16 @@ void main(void){
     }
 
     // Stack layers on the sequential Model
-    add_feed_forward_layer(sequential_nn, 0, sequential_nn->input_size, 0);
-    add_feed_forward_layer(sequential_nn, sequential_nn->input_size, sequential_nn->hidden_size, 0);
+    add_feed_forward_layer(sequential_nn, sequential_nn->hidden_size, sequential_nn->input_size, 0);
     add_feed_forward_layer(sequential_nn, sequential_nn->hidden_size, sequential_nn->hidden_size, 0);
-    add_feed_forward_layer(sequential_nn, sequential_nn->hidden_size, sequential_nn->output_size, 0);
+    add_feed_forward_layer(sequential_nn, sequential_nn->hidden_size, sequential_nn->hidden_size, 0);
+    add_feed_forward_layer(sequential_nn, sequential_nn->output_size, sequential_nn->hidden_size, 0);
     print_sequential_nn(sequential_nn);
 
     // Forward Pass 
     forward_sequential_nn(sequential_nn, _X);
-    matrix_print(_X);
+
+    // Loss Calculation
     double label[2][1] = {540.0, 500.0};
     Matrix* mat = matrix_create_from_array(2, 1, label);
     Matrix* loss = NULL;

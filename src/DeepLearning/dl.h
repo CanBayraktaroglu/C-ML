@@ -129,11 +129,12 @@ typedef struct{
 
 // FEED FORWARD NEURAL NETWORK
 typedef struct {
-    size_t prev_layer_num_neurons;
+    size_t next_num_neurons;
     size_t num_neurons;
     void (*act_fn)(Matrix* X);
     char act_fn_mapping;
     Matrix* weights;
+    Matrix* grad_delta;
     Matrix* grad_W;
     Matrix* biases;
     Matrix* grad_b;
@@ -141,7 +142,6 @@ typedef struct {
 
 // Feed Forward Pass
 void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
-    if (layer->prev_layer_num_neurons){
         Matrix* _X = matrix_copy(X);
         Matrix* W = matrix_copy(layer->weights);
         Matrix* b = matrix_copy(layer->biases);
@@ -160,22 +160,48 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
         free(b);
         matrix_destroy(_X);
         free(_X);
-
-    }  
+  
 };
 
-void set_gradients_feed_forward_layer(FeedForwardLayer* layer, Matrix* X){
-    Matrix* da_dz = NULL;
+void set_prior_delta_gradients_feed_forward_layer(FeedForwardLayer* layer, Matrix* z, Matrix* a_prev){
+    // In the backpropagation method the upcoming gradients must be considered for the 
+    // calculation of delta_L too
+
+    Matrix* da_dz = NULL;    
+    matrix_create(&da_dz, z->n_rows, z->n_cols);
+
     switch(layer->act_fn_mapping){
-        case 0:
-            matrix_create(da_dz, layer->biases->n_rows, layer->biases->n_cols); 
+        case 0: // linear
+            for (size_t i = 0; i < da_dz->n_rows; i++){
+                for (size_t j = 0; j < da_dz->n_cols; j++){
+                    matrix_set(da_dz, i, j, 1.0);
+                }
+            } 
+            break;
         case 1: // relu            
-            for (size_t i = 0; i < layer->biases->n_rows; i++){
-                for (size_t j = 0; j < layer->biases->n_cols; j++){
-                    if ()
+            for (size_t i = 0; i < da_dz->n_rows; i++){
+                for (size_t j = 0; j < da_dz->n_cols; j++){
+                    if (matrix_get(z, i, j) <= 0) continue;
+                    matrix_set(da_dz, i, j, 1.0);
                 }
             }
-            break; 
+            break;
+        case 2: // sigmoid
+            double z_i_j, d_a_d_z_i_j;
+            for (size_t i = 0; i < da_dz->n_rows; i++){
+                for (size_t j = 0; j < da_dz->n_cols; j++){
+                    z_i_j = matrix_get(z, i, j);
+                    d_a_d_z_i_j = z_i_j * (1.0 - z_i_j);
+                    matrix_set(da_dz, i, j, d_a_d_z_i_j);
+                }
+            }
+            break;
+        case 3: // tanh
+            printf("NOT IMPLEMENTED YET\n.");
+            matrix_destroy(da_dz);
+            free(da_dz);
+            exit(0);
+            break;
     }
 };
 
@@ -197,22 +223,22 @@ void destroy_feed_forward_layer(FeedForwardLayer* layer){
 };
 
 // Allocate memory for FFNN
-FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
+FeedForwardLayer* create_feed_forward_layer(size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
     FeedForwardLayer* layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
 
     // Set the neuron numbers
-    layer->prev_layer_num_neurons = prev_layer_num_neurons;
+    layer->next_num_neurons = next_num_neurons;
     layer->num_neurons = num_neurons;
 
     // initialize biases and weights on the heap
     layer->biases = NULL;
-    matrix_create(&(layer->biases), num_neurons, 1); // num_neurons x 1
+    matrix_create(&(layer->biases), next_num_neurons, 1); // num_neurons x 1
     layer->weights = NULL;
-    matrix_create(&(layer->weights), num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
+    matrix_create(&(layer->weights), next_num_neurons, num_neurons); // N{i} x N_{i-1}
 
     // Initialize weight_grad
     layer->grad_W = NULL;
-    matrix_create(&(layer->grad_W), num_neurons, prev_layer_num_neurons);
+    matrix_create(&(layer->grad_W), next_num_neurons, num_neurons);
 
     switch(act_fn_mapping){
         case 0:
@@ -235,14 +261,14 @@ FeedForwardLayer* create_feed_forward_layer(size_t prev_layer_num_neurons, size_
     return layer;
 };
 
-void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
+void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
     // Set the neuron numbers
-    (*layer_dptr)->prev_layer_num_neurons = prev_layer_num_neurons;
+    (*layer_dptr)->next_num_neurons = next_num_neurons;
     (*layer_dptr)->num_neurons = num_neurons;
 
     // initialize biases on the heap
     (*layer_dptr)->biases = NULL;
-    matrix_create(&((*layer_dptr)->biases), num_neurons, 1); // num_neurons x 1
+    matrix_create(&((*layer_dptr)->biases), next_num_neurons, 1); // num_neurons x 1
 
     // Set biases to 1.0
     for (size_t i = 0; i < (*layer_dptr)->biases->n_rows; i++){
@@ -253,7 +279,7 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_nu
 
     // Initalize weights
     (*layer_dptr)->weights = NULL;
-    matrix_create(&((*layer_dptr)->weights), num_neurons, prev_layer_num_neurons); // N{i} x N_{i-1}
+    matrix_create(&((*layer_dptr)->weights), next_num_neurons, num_neurons); // N{i+1} x N_{i}
     
     // Set weights to 1.0
     for (size_t i = 0; i < (*layer_dptr)->weights->n_rows; i++){
@@ -264,7 +290,7 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t prev_layer_nu
 
     // initalize weight gradients
     (*layer_dptr)->grad_W = NULL;
-    matrix_create(&((*layer_dptr)->grad_W), num_neurons, prev_layer_num_neurons);
+    matrix_create(&((*layer_dptr)->grad_W), next_num_neurons, num_neurons); // N{i+1} x N_{i}
 
     // set act_fn_mapping
     (*layer_dptr)->act_fn_mapping = act_fn_mapping;
@@ -367,7 +393,7 @@ void destroy_sequential_nn(Sequential_NN* model_ptr){
     model_ptr->layers = NULL;
 };
 
-void add_feed_forward_layer(Sequential_NN* model_ptr, size_t prev_layer_num_neurons, size_t num_neurons, char act_fn_mapping){
+void add_feed_forward_layer(Sequential_NN* model_ptr, size_t output_size, size_t input_size, char act_fn_mapping){
     if (model_ptr == NULL){
         printf("Passed model pointer is NULL.\n");
         exit(0);
@@ -390,7 +416,7 @@ void add_feed_forward_layer(Sequential_NN* model_ptr, size_t prev_layer_num_neur
         printf("Layer ptr points to NULL.\n Feed forward layer cannot be added.\n");
         exit(0);
     } 
-    init_feed_forward_layer(&layer_ptr, prev_layer_num_neurons, num_neurons, act_fn_mapping);
+    init_feed_forward_layer(&layer_ptr, output_size, input_size, act_fn_mapping);
 };
 
 void print_sequential_nn(Sequential_NN* model_ptr){
