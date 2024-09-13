@@ -133,6 +133,7 @@ typedef struct {
     size_t num_neurons;
     void (*act_fn)(Matrix* X);
     char act_fn_mapping;
+    Matrix* a_prev;
     Matrix* weights;
     Matrix* biases;
     Matrix* da_dz;
@@ -186,30 +187,75 @@ void set_da_dz_feed_forward_layer(FeedForwardLayer* layer, Matrix* z){
 
 // Feed Forward Pass
 void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
-        Matrix* _X = matrix_copy(X);
-        Matrix* W = matrix_copy(layer->weights);
-        Matrix* b = matrix_copy(layer->biases);
+    layer->a_prev = X;
+    Matrix* _X = matrix_copy(X);
+    Matrix* W = matrix_copy(layer->weights);
+    Matrix* b = matrix_copy(layer->biases);
 
-        matrix_multiply(W, _X, &X, 0); // X = W*X | num_neurons x 1
-        matrix_destroy(_X);
-        free(_X);
-        _X = matrix_copy(X);
-        matrix_add(_X, b, &X, 0); // X = X + B | num_neurons x 1
+    matrix_multiply(W, _X, &X, 0); // X = W*X | num_neurons x 1
+    matrix_destroy(_X);
+    free(_X);
+    _X = matrix_copy(X);
+    matrix_add(_X, b, &X, 0); // X = X + B | num_neurons x 1
 
-        layer->act_fn(X);
+    layer->act_fn(X);
+    
+    // store da_dz of the layer for backprop
+    set_da_dz_feed_forward_layer(layer, X);
 
-        // store da_dz of the layer for backprop
-        set_da_dz_feed_forward_layer(layer, X);
-
-        matrix_destroy(W);
-        free(W);
-        matrix_destroy(b);
-        free(b);
-        matrix_destroy(_X);
-        free(_X);
+    matrix_destroy(W);
+    free(W);
+    matrix_destroy(b);
+    free(b);
+    matrix_destroy(_X);
+    free(_X);
   
 };
 
+void backprop_feed_forward_layer(FeedForwardLayer* layer, Matrix* delta_grad_next){ 
+    double delta_grad_j = 0.0;
+    double delta_grad_val = 0.0;
+    double da_dz_j = 0.0;
+    double delta_k = 0.0;
+    double w_k_j = 0.0;
+
+    // Set grad_delta of the layer
+    for (size_t j = 0; j < layer->grad_delta->n_rows; j++){        
+        da_dz_j = matrix_get(layer->da_dz, j, 0);            
+        delta_grad_val = 0.0;
+        
+        for (size_t k = 0; k < delta_grad_next->n_rows; k++){
+            delta_k = matrix_get(delta_grad_next, k, 0);
+            w_k_j = matrix_get(layer->weights, k, j);
+            delta_grad_val += delta_k * w_k_j;
+        }
+
+        delta_grad_val *= da_dz_j;
+        matrix_set(layer->grad_delta, j, 0, delta_grad_val);
+    }
+
+    // set gradient weights
+    double dC_dw_j_k = 0.0;
+    for (size_t j = 0; j < layer->grad_W->n_rows; j++){
+        for (size_t k = 0; k < layer->grad_W->n_cols; k++){
+            dC_dw_j_k = matrix_get(delta_grad_next, j, k) * matrix_get(layer->a_prev, k, 0);
+            matrix_set(layer->grad_W, j, k, dC_dw_j_k);            
+        }
+    }
+
+    // set bias gradients
+    double dC_db_j = 0.0;
+    for (size_t j = 0; j < layer->grad_b->n_rows; j++){
+        dC_db_j = matrix_get(delta_grad_next, j, 0);
+        matrix_set(layer->grad_b, j, 0, dC_db_j);
+    }
+
+};
+
+void optimize_sequential_nn(Sequential_NN* model, Matrix* loss){
+    double loss_val = matrix_get(loss, 0, 0);
+    // TODO
+};
 
 // Garbage Collector Funcs
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
