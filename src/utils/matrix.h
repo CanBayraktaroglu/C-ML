@@ -53,7 +53,7 @@ double matrix_get(const Matrix* mat, const size_t i, const size_t j){
         printf("row index exceeded matrix row number\n.");
         exit(0);
     }
-
+    
     if (j >= mat->n_cols){
         printf("col index exceeded matrix col number\n.");
         exit(0);

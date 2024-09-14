@@ -8,8 +8,10 @@
 #include <math.h>
 #include <assert.h>
 
+
+#pragma region Loss Functions
 // Loss Functions
-void mean_squared_loss(Matrix* prediction, Matrix* label, Matrix** loss){
+void L2_loss(Matrix* prediction, Matrix* label, Matrix** loss){
     if (prediction->n_rows != label->n_rows || prediction->n_cols != label->n_cols){
         printf("Matrix sizes do not match\n.");
         matrix_destroy(prediction);
@@ -25,12 +27,23 @@ void mean_squared_loss(Matrix* prediction, Matrix* label, Matrix** loss){
     Matrix* _loss = NULL;
     Matrix* loss_T = matrix_transpose(*loss);
     matrix_multiply(loss_T, *loss, &_loss, 0);
-    matrix_sqrt(_loss);
     matrix_destroy(*loss);
     free(*loss);
     matrix_destroy(loss_T);
     free(loss_T);
     *loss = _loss;    
+};
+ 
+void backward_L2_loss(Matrix* a_out, Matrix* y, Matrix** dC_da_out){
+    if (a_out == NULL || y == NULL){
+        printf("aout or y pointing to NULL address\n.");
+        exit(0);
+    }
+    
+    Matrix* mat = NULL;
+    matrix_subtract(a_out, y, &mat, 0);
+    scalar_product(mat, 2.0, dC_da_out, 0);
+
 };
 
 void L1_loss(Matrix* prediction, Matrix* label, Matrix** loss){
@@ -61,6 +74,9 @@ void L1_loss(Matrix* prediction, Matrix* label, Matrix** loss){
     *loss = output;
 
 };
+#pragma endregion Loss Functions
+
+#pragma region Activation Functions
 
 // ACTIVATION FUNCTIONS
 void relu(Matrix* X){
@@ -72,19 +88,6 @@ void relu(Matrix* X){
             }
         }
 
-    }
-};
-
-void backward_relu(Matrix* Z, Matrix** da_dz){
-    if (*da_dz == NULL){
-        matrix_create(da_dz, Z->n_rows, Z->n_cols);
-    }
-
-    for (size_t i = 0; i < Z->n_rows; i++){
-        for (size_t j = 0; j < Z->n_cols; j++){
-            if (matrix_get(Z, i, j) <= 0) continue;
-            matrix_set(*da_dz, i, j, 1.0);
-        }
     }
 };
 
@@ -100,15 +103,6 @@ void sigmoid(Matrix* X){
     }
 };
 
-void backward_sigmoid(Matrix* Z, Matrix** da_dz){
-    if (*da_dz == NULL){
-        matrix_create(da_dz, Z->n_rows, Z->n_cols);
-    }
-
-    // da/dz = sigmoid(Z) * (1-sigmoid(Z))
-    Matrix* _Z = NULL;
-};
-
 void _tanh(Matrix* X){
     if (X->n_cols){
         for (size_t i = 0; i < X->n_rows; i++){
@@ -122,12 +116,11 @@ void _tanh(Matrix* X){
 
 void linear(Matrix* X){
 };
+#pragma endregion Activation Functions
 
-typedef struct{
-    void (*actfn)(Matrix* X);
-}actfn_utils;
+#pragma region Feed Forward Layer 
 
-// FEED FORWARD NEURAL NETWORK
+// FEED FORWARD Layer
 typedef struct {
     size_t next_num_neurons;
     size_t num_neurons;
@@ -252,10 +245,6 @@ void backprop_feed_forward_layer(FeedForwardLayer* layer, Matrix* delta_grad_nex
 
 };
 
-void optimize_sequential_nn(Sequential_NN* model, Matrix* loss){
-    double loss_val = matrix_get(loss, 0, 0);
-    // TODO
-};
 
 // Garbage Collector Funcs
 void destroy_feed_forward_layer(FeedForwardLayer* layer){
@@ -398,7 +387,9 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t next_num_neur
             exit(0);
     };
 };
+#pragma endregion Feed Forward Layer
 
+#pragma region Sequential Neural Network 
 typedef enum {
     FEED_FORWARD,
     CONVOLUTIONAL,
@@ -542,5 +533,35 @@ void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
         //matrix_print(x);
     }
 };
+
+void optimize_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char loss_fn){
+    
+    Matrix* dC_da_out = NULL;
+    switch(loss_fn){
+        case 0: //L2 loss
+            backward_L2_loss(a_out, y, &dC_da_out);
+            break;
+        default:
+            printf("Selected loss function is not supported.\n");
+            exit(0);
+    }
+    
+    Matrix* delta_grad_next = matrix_copy(dC_da_out);
+    matrix_destroy(dC_da_out);
+    free(dC_da_out);
+
+    for (size_t i = model->num_layers - 1; i >= 0; i--){
+        Layer* layer_ptr = model->layers + i;
+        switch(layer_ptr->type){
+            case FEED_FORWARD:
+                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                backprop_feed_forward_layer(ff_layer_ptr, delta_grad_next);
+                break;
+        }
+    }
+
+};
+
+#pragma endregion Sequential Neural Network
 
 #endif // __DL_H__

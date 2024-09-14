@@ -33,7 +33,7 @@ void main(void){
     double label[2][1] = {540.0, 500.0};
     Matrix* mat = matrix_create_from_array(2, 1, label);
     Matrix* loss = NULL;
-    mean_squared_loss(_X, mat, &loss);
+    L2_loss(_X, mat, &loss);
     matrix_print(loss);
     
     // Free allocated dynamic memory
