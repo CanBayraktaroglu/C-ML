@@ -118,6 +118,18 @@ void linear(Matrix* X){
 };
 #pragma endregion Activation Functions
 
+#pragma region Optimizer
+typedef enum{
+    BASE,
+    ADAM,
+}OptimizerType;
+
+typedef union{
+    
+}OptimizerUnion;
+
+#pragma endregion Optimizer
+
 #pragma region Feed Forward Layer 
 
 // FEED FORWARD Layer
@@ -530,7 +542,6 @@ void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
                 printf("Layer Type not supported.");
                 break;
         }
-        //matrix_print(x);
     }
 };
 
@@ -546,19 +557,39 @@ void optimize_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char
             exit(0);
     }
     
-    Matrix* delta_grad_next = matrix_copy(dC_da_out);
-    matrix_destroy(dC_da_out);
-    free(dC_da_out);
+    Matrix* delta_grad_next = dC_da_out;
 
     for (size_t i = model->num_layers - 1; i >= 0; i--){
         Layer* layer_ptr = model->layers + i;
         switch(layer_ptr->type){
             case FEED_FORWARD:
                 FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+
+                // Calculate Gradients
                 backprop_feed_forward_layer(ff_layer_ptr, delta_grad_next);
+                delta_grad_next = ff_layer_ptr->grad_delta;
+
+                // Update Weights
+                Matrix* layer_W = ff_layer_ptr->weights;
+                for (size_t i = 0; i < layer_W->n_rows; i++){
+                    for (size_t j = 0; j < layer_W->n_cols; j++){
+                        double w_i_j = matrix_get(layer_W, i, j);
+                        w_i_j -= 0.0;// OPTIMIZATION;
+
+                    }
+                }
+
                 break;
+            default:
+                printf("Layer type not supported.\n");
+                exit(0);
         }
     }
+
+    matrix_destroy(dC_da_out);
+    free(dC_da_out);
+
+
 
 };
 
