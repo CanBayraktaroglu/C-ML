@@ -164,13 +164,25 @@ typedef struct{
     double learning_rate;
     double alpha;
     double beta_1;
-    double beta_2;  
+    double beta_2;
+    Matrix** m_w_dptr;
+    Matrix** m_b_dptr;
+    Matrix** v_w_dptr;  
+    Matrix** v_b_dptr;
 }Adam_Optimizer;
 
-Adam_Optimizer create_Adam_optimizer(double lr, double alpha, double beta_1, double beta_2){
-    Adam_Optimizer opt = {.learning_rate = lr, .alpha = alpha, .beta_1 = beta_1,
-        .beta_2 = beta_2};
-    return opt;
+void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alpha, double beta_1, double beta_2){
+    if (*optimizer_dptr == NULL){
+        *optimizer_dptr = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
+    }
+
+    (*optimizer_dptr)->alpha = alpha;
+    (*optimizer_dptr)->beta_1 = beta_1;
+    (*optimizer_dptr)->beta_2 = beta_2;
+    (*optimizer_dptr)->learning_rate = lr;
+
+    //TODO
+
 };
 
 #pragma endregion Adam
