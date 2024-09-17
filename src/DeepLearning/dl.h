@@ -119,14 +119,78 @@ void linear(Matrix* X){
 #pragma endregion Activation Functions
 
 #pragma region Optimizer
+
+#pragma region Adam
+/*
+Adam Optimizer 
+
+Adaptive Moment Estimation is an algorithm for optimization technique for gradient descent. 
+The method is really efficient when working with large problem involving a lot of data or parameters.
+It requires less memory and is efficient. Intuitively, it is a combination of the ‘gradient descent 
+    with momentum’ algorithm and the ‘RMSP’ algorithm. 
+A combination of two gradient descent methodoligies
+
+Momentum: 
+
+This algorithm is used to accelerate the gradient descent algorithm by taking into consideration 
+the ‘exponentially weighted average’ of the gradients. Using averages makes the algorithm converge
+towards the minima in a faster pace. ​
+                                w_t+1 = w_t - alpha * m_t
+                          where m_t = beta_1 * m_t-1 + (1-beta_1)*[delta_W[i][t]] (1)
+
+
+Root Mean Square Propagation:
+
+Root mean square prop or RMSprop is an adaptive learning algorithm that tries to improve AdaGrad.
+Instead of taking the cumulative sum of squared gradients like in AdaGrad, 
+    it takes the ‘exponential moving average’.
+                                w_t+1 = w_t - (alpha_t)/(v_t + epsilon)^(0.5) * [delta_W[i][t]]
+                          where v_t = beta_2*v_t-1 + (1-beta_2)*[delta_W[i][t]]^2 (2)
+
+Since mt and vt have both initialized as 0 (based on the eq. (1) and (2)),
+it is observed that they gain a tendency to be ‘biased towards 0’ as both β1 & β2 ≈ 1.
+This Optimizer fixes this problem by computing ‘bias-corrected’ mt and vt.
+This is also done to control the weights while reaching the global minimum to prevent 
+    high oscillations when near it. 
+
+The formulas used are:
+                                m_dach_t = m_t/(1-beta_1^t)
+                                v_dach_t = v_t/(1-beta_2^t)
+
+        --> w_t+1 = w_t - m_dach_t*(alpha/sqrt(v_dach_t + epsilon))
+*/
+
+typedef struct{
+    double learning_rate;
+    double alpha;
+    double beta_1;
+    double beta_2;  
+}Adam_Optimizer;
+
+Adam_Optimizer create_Adam_optimizer(double lr, double alpha, double beta_1, double beta_2){
+    Adam_Optimizer opt = {.learning_rate = lr, .alpha = alpha, .beta_1 = beta_1,
+        .beta_2 = beta_2};
+    return opt;
+};
+
+#pragma endregion Adam
+
 typedef enum{
+    Adam,
     BASE,
-    ADAM,
 }OptimizerType;
 
 typedef union{
-    
+    Adam_Optimizer adam_optimizer;    
 }OptimizerUnion;
+
+typedef struct
+{
+    OptimizerType optimizer_type;
+    OptimizerUnion optimizer;
+
+}Optimizer;
+
 
 #pragma endregion Optimizer
 
