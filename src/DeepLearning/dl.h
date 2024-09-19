@@ -118,93 +118,6 @@ void linear(Matrix* X){
 };
 #pragma endregion Activation Functions
 
-#pragma region Optimizer
-
-#pragma region Adam
-/*
-Adam Optimizer 
-
-Adaptive Moment Estimation is an algorithm for optimization technique for gradient descent. 
-The method is really efficient when working with large problem involving a lot of data or parameters.
-It requires less memory and is efficient. Intuitively, it is a combination of the ‘gradient descent 
-    with momentum’ algorithm and the ‘RMSP’ algorithm. 
-A combination of two gradient descent methodoligies
-
-Momentum: 
-
-This algorithm is used to accelerate the gradient descent algorithm by taking into consideration 
-the ‘exponentially weighted average’ of the gradients. Using averages makes the algorithm converge
-towards the minima in a faster pace. ​
-                                w_t+1 = w_t - alpha * m_t
-                          where m_t = beta_1 * m_t-1 + (1-beta_1)*[delta_W[i][t]] (1)
-
-
-Root Mean Square Propagation:
-
-Root mean square prop or RMSprop is an adaptive learning algorithm that tries to improve AdaGrad.
-Instead of taking the cumulative sum of squared gradients like in AdaGrad, 
-    it takes the ‘exponential moving average’.
-                                w_t+1 = w_t - (alpha_t)/(v_t + epsilon)^(0.5) * [delta_W[i][t]]
-                          where v_t = beta_2*v_t-1 + (1-beta_2)*[delta_W[i][t]]^2 (2)
-
-Since mt and vt have both initialized as 0 (based on the eq. (1) and (2)),
-it is observed that they gain a tendency to be ‘biased towards 0’ as both β1 & β2 ≈ 1.
-This Optimizer fixes this problem by computing ‘bias-corrected’ mt and vt.
-This is also done to control the weights while reaching the global minimum to prevent 
-    high oscillations when near it. 
-
-The formulas used are:
-                                m_dach_t = m_t/(1-beta_1^t)
-                                v_dach_t = v_t/(1-beta_2^t)
-
-        --> w_t+1 = w_t - m_dach_t*(alpha/sqrt(v_dach_t + epsilon))
-*/
-
-typedef struct{
-    double learning_rate;
-    double alpha;
-    double beta_1;
-    double beta_2;
-    Matrix** m_w_dptr;
-    Matrix** m_b_dptr;
-    Matrix** v_w_dptr;  
-    Matrix** v_b_dptr;
-}Adam_Optimizer;
-
-void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alpha, double beta_1, double beta_2){
-    if (*optimizer_dptr == NULL){
-        *optimizer_dptr = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
-    }
-
-    (*optimizer_dptr)->alpha = alpha;
-    (*optimizer_dptr)->beta_1 = beta_1;
-    (*optimizer_dptr)->beta_2 = beta_2;
-    (*optimizer_dptr)->learning_rate = lr;
-
-    //TODO
-
-};
-
-#pragma endregion Adam
-
-typedef enum{
-    Adam,
-    BASE,
-}OptimizerType;
-
-typedef union{
-    Adam_Optimizer adam_optimizer;    
-}OptimizerUnion;
-
-typedef struct
-{
-    OptimizerType optimizer_type;
-    OptimizerUnion optimizer;
-
-}Optimizer;
-
-
-#pragma endregion Optimizer
 
 #pragma region Feed Forward Layer 
 
@@ -670,5 +583,134 @@ void optimize_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char
 };
 
 #pragma endregion Sequential Neural Network
+
+#pragma region Optimizer
+
+#pragma region Adam
+/*
+Adam Optimizer 
+
+Adaptive Moment Estimation is an algorithm for optimization technique for gradient descent. 
+The method is really efficient when working with large problem involving a lot of data or parameters.
+It requires less memory and is efficient. Intuitively, it is a combination of the ‘gradient descent 
+    with momentum’ algorithm and the ‘RMSP’ algorithm. 
+A combination of two gradient descent methodoligies
+
+Momentum: 
+
+This algorithm is used to accelerate the gradient descent algorithm by taking into consideration 
+the ‘exponentially weighted average’ of the gradients. Using averages makes the algorithm converge
+towards the minima in a faster pace. ​
+                                w_t+1 = w_t - alpha * m_t
+                          where m_t = beta_1 * m_t-1 + (1-beta_1)*[delta_W[i][t]] (1)
+
+
+Root Mean Square Propagation:
+
+Root mean square prop or RMSprop is an adaptive learning algorithm that tries to improve AdaGrad.
+Instead of taking the cumulative sum of squared gradients like in AdaGrad, 
+    it takes the ‘exponential moving average’.
+                                w_t+1 = w_t - (alpha_t)/(v_t + epsilon)^(0.5) * [delta_W[i][t]]
+                          where v_t = beta_2*v_t-1 + (1-beta_2)*[delta_W[i][t]]^2 (2)
+
+Since mt and vt have both initialized as 0 (based on the eq. (1) and (2)),
+it is observed that they gain a tendency to be ‘biased towards 0’ as both β1 & β2 ≈ 1.
+This Optimizer fixes this problem by computing ‘bias-corrected’ mt and vt.
+This is also done to control the weights while reaching the global minimum to prevent 
+    high oscillations when near it. 
+
+The formulas used are:
+                                m_dach_t = m_t/(1-beta_1^t)
+                                v_dach_t = v_t/(1-beta_2^t)
+
+        --> w_t+1 = w_t - m_dach_t*(alpha/sqrt(v_dach_t + epsilon))
+*/
+
+typedef struct{
+    double learning_rate;
+    double alpha;
+    double beta_1;
+    double beta_2;
+    size_t num_layers;
+    Matrix* m_w_ptr;
+    Matrix* m_b_ptr;
+    Matrix* v_w_ptr;  
+    Matrix* v_b_ptr;
+}Adam_Optimizer;
+
+void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alpha, double beta_1, double beta_2, Layer* layers, size_t num_layers){
+    if (*optimizer_dptr == NULL){
+        *optimizer_dptr = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
+    }
+
+    (*optimizer_dptr)->alpha = alpha;
+    (*optimizer_dptr)->beta_1 = beta_1;
+    (*optimizer_dptr)->beta_2 = beta_2;
+    (*optimizer_dptr)->learning_rate = lr;
+    (*optimizer_dptr)->num_layers = num_layers;
+
+    // Allocate space for gradients for weights and biases in each layer
+    (*optimizer_dptr)->m_w_ptr = (Matrix*)malloc(num_layers*sizeof(Matrix));
+    (*optimizer_dptr)->m_b_ptr = (Matrix*)malloc(num_layers*sizeof(Matrix)); 
+    (*optimizer_dptr)->v_w_ptr = (Matrix*)malloc(num_layers*sizeof(Matrix));
+    (*optimizer_dptr)->v_b_ptr = (Matrix*)malloc(num_layers*sizeof(Matrix));
+    
+    // Initialize
+    for (size_t i = 0; i < num_layers; i++){
+        Layer* layer_ptr = layers + i;
+        switch(layer_ptr->type){
+            case FEED_FORWARD:
+                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                
+                //set rows and cols
+                matrix_realloc((*optimizer_dptr)->m_w_ptr + i, ff_layer_ptr->grad_W->n_rows, ff_layer_ptr->grad_W->n_cols);
+                matrix_realloc((*optimizer_dptr)->v_w_ptr + i, ff_layer_ptr->grad_W->n_rows, ff_layer_ptr->grad_W->n_cols);
+                matrix_realloc((*optimizer_dptr)->m_b_ptr + i, ff_layer_ptr->grad_b->n_rows, ff_layer_ptr->grad_b->n_cols);
+                matrix_realloc((*optimizer_dptr)->v_b_ptr + i, ff_layer_ptr->grad_b->n_rows, ff_layer_ptr->grad_b->n_cols);
+
+            default:
+                printf("Provided layer type not supported.\n");
+                break;     
+
+        }   
+    }
+
+};
+
+void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
+    for (size_t i = 0; i < optimizer->num_layers; i++){
+        Layer* layer_ptr = layers + i;
+        switch(layer_ptr->type){
+            case FEED_FORWARD:
+                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                for (size_t j = 0; j < ff_layer_ptr->grad_W->n_rows; j++){
+                    for (size_t k =0; k < ff_layer_ptr->grad_W->n_cols; k++){
+                        // TODO
+                    }
+                }
+        }
+    }   
+}
+
+#pragma endregion Adam
+
+typedef enum{
+    Adam,
+    BASE,
+}OptimizerType;
+
+typedef union{
+    Adam_Optimizer adam_optimizer;    
+}OptimizerUnion;
+
+typedef struct
+{
+    OptimizerType optimizer_type;
+    OptimizerUnion optimizer;
+
+}Optimizer;
+
+
+#pragma endregion Optimizer
 
 #endif // __DL_H__
