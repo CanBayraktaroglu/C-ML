@@ -631,6 +631,7 @@ typedef struct{
     double alpha;
     double beta_1;
     double beta_2;
+    double epsilon;
     size_t num_layers;
     Matrix* m_w_ptr;
     Matrix* m_b_ptr;
@@ -638,15 +639,16 @@ typedef struct{
     Matrix* v_b_ptr;
 }Adam_Optimizer;
 
-void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alpha, double beta_1, double beta_2, Layer* layers, size_t num_layers){
+void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alpha, double beta_1, double beta_2, double epsilon, Layer* layers, size_t num_layers){
     if (*optimizer_dptr == NULL){
         *optimizer_dptr = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
     }
 
+    (*optimizer_dptr)->learning_rate = lr;
     (*optimizer_dptr)->alpha = alpha;
     (*optimizer_dptr)->beta_1 = beta_1;
     (*optimizer_dptr)->beta_2 = beta_2;
-    (*optimizer_dptr)->learning_rate = lr;
+    (*optimizer_dptr)->epsilon = epsilon;
     (*optimizer_dptr)->num_layers = num_layers;
 
     // Allocate space for gradients for weights and biases in each layer
@@ -678,6 +680,11 @@ void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alph
 };
 
 void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
+    
+    double m_t_prev, m_t, m_dach_t, v_t, v_t_prev;
+    double grad_W_j_k_t, w_j_k_opt, v_dach_t, w_j_k_t;
+    double grad_b_j_t, b_j_opt, b_j_t;
+
     for (size_t i = 0; i < optimizer->num_layers; i++){
         Layer* layer_ptr = layers + i;
         switch(layer_ptr->type){
@@ -685,31 +692,83 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
                 FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 for (size_t j = 0; j < ff_layer_ptr->grad_W->n_rows; j++){
                     for (size_t k =0; k < ff_layer_ptr->grad_W->n_cols; k++){
-                        // TODO
+                        // Weights                       
+                            grad_W_j_k_t = matrix_get(ff_layer_ptr->grad_W, j, k);
+                            
+                            // m_W
+                                m_t_prev = matrix_get(optimizer->m_w_ptr + i, j, k);
+                            
+                            
+                                // Calculate value of m_t+1 and update m_t
+                                m_t = optimizer->beta_1 * m_t_prev + (1 - optimizer->beta_1) * grad_W_j_k_t; // delta_W[j][k]
+                                matrix_set(optimizer->m_w_ptr + i, j, k, m_t); 
+                                
+                                m_dach_t = m_t/(1 - pow(optimizer->beta_1, i));
+    
+                            // v_W
+                                v_t_prev = matrix_get(optimizer->v_w_ptr, j, k);
+                                
+                                // Calculate value of v_t+1 and update v_t
+                                v_t = optimizer->beta_2 * v_t_prev + (1- optimizer->beta_2) * pow(grad_W_j_k_t, 2); // [delta_W[i][t]]^2
+                                matrix_set(optimizer->v_w_ptr + i, j, k, v_t);
+
+                                v_dach_t = v_t/(1 - pow(optimizer->beta_2, i));
+
+                        // update the corresponding weight W[j][k] of the Layer i of the model
+                            w_j_k_t = matrix_get(ff_layer_ptr->weights, j, k);
+                            w_j_k_opt = w_j_k_t - m_dach_t * (optimizer->alpha / sqrt(v_dach_t + optimizer->epsilon));
+                            matrix_set(ff_layer_ptr->weights, j, k, w_j_k_opt);
+
                     }
+                        // Biases                        
+                            grad_b_j_t = matrix_get(ff_layer_ptr->grad_b, j, 0);
+                            
+                            // m_b
+                                m_t_prev = matrix_get(optimizer->m_b_ptr + i, j, 0);
+                            
+                            
+                                // Calculate value of m_t+1 and update m_t
+                                m_t = optimizer->beta_1 * m_t_prev + (1 - optimizer->beta_1) * grad_b_j_t; // delta_W[j][k]
+                                matrix_set(optimizer->m_b_ptr + i, j, 0, m_t); 
+                                
+                                m_dach_t = m_t/(1 - pow(optimizer->beta_1, i));
+    
+                            // v_b
+                                v_t_prev = matrix_get(optimizer->v_b_ptr, j, 0);
+                                
+                                // Calculate value of v_t+1 and update v_t
+                                v_t = optimizer->beta_2 * v_t_prev + (1 - optimizer->beta_2) * pow(grad_b_j_t, 2); // [delta_W[i][t]]^2
+                                matrix_set(optimizer->v_b_ptr + i, j, 0, v_t);
+
+                                v_dach_t = v_t/(1 - pow(optimizer->beta_2, i));
+
+                        // update the corresponding weight b[j] of the Layer i of the model
+                            b_j_t = matrix_get(ff_layer_ptr->biases, j, 0);
+                            b_j_opt = b_j_t - m_dach_t * (optimizer->alpha / sqrt(v_dach_t + optimizer->epsilon));
+                            matrix_set(ff_layer_ptr->biases, j, 0, b_j_opt);
                 }
         }
     }   
 }
 
+void destroy_adam_optimizer(Adam_Optimizer* optimizer){
+    for (size_t i = optimizer->num_layers - 1; i >= 0; i++){
+
+        // Free matrices
+            matrix_destroy(optimizer->m_w_ptr + i);
+            matrix_destroy(optimizer->v_w_ptr + i);
+            matrix_destroy(optimizer->m_b_ptr + i);
+            matrix_destroy(optimizer->v_b_ptr + i);
+    }
+
+    // Free addresses
+        free(optimizer->m_w_ptr);
+        free(optimizer->v_w_ptr);
+        free(optimizer->m_b_ptr);
+        free(optimizer->v_b_ptr);
+};
+
 #pragma endregion Adam
-
-typedef enum{
-    Adam,
-    BASE,
-}OptimizerType;
-
-typedef union{
-    Adam_Optimizer adam_optimizer;    
-}OptimizerUnion;
-
-typedef struct
-{
-    OptimizerType optimizer_type;
-    OptimizerUnion optimizer;
-
-}Optimizer;
-
 
 #pragma endregion Optimizer
 
