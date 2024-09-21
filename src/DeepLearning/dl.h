@@ -214,35 +214,35 @@ void backprop_feed_forward_layer(FeedForwardLayer* layer, Matrix* delta_grad_nex
     double w_k_j = 0.0;
 
     // Set grad_delta of the layer
-    for (size_t j = 0; j < layer->grad_delta->n_rows; j++){        
-        da_dz_j = matrix_get(layer->da_dz, j, 0);            
-        delta_grad_val = 0.0;
-        
-        for (size_t k = 0; k < delta_grad_next->n_rows; k++){
-            delta_k = matrix_get(delta_grad_next, k, 0);
-            w_k_j = matrix_get(layer->weights, k, j);
-            delta_grad_val += delta_k * w_k_j;
-        }
+        for (size_t j = 0; j < layer->grad_delta->n_rows; j++){        
+            da_dz_j = matrix_get(layer->da_dz, j, 0);            
+            delta_grad_val = 0.0;
+            
+            for (size_t k = 0; k < delta_grad_next->n_rows; k++){
+                delta_k = matrix_get(delta_grad_next, k, 0);
+                w_k_j = matrix_get(layer->weights, k, j);
+                delta_grad_val += delta_k * w_k_j;
+            }
 
-        delta_grad_val *= da_dz_j;
-        matrix_set(layer->grad_delta, j, 0, delta_grad_val);
-    }
+            delta_grad_val *= da_dz_j;
+            matrix_set(layer->grad_delta, j, 0, delta_grad_val);
+        }
 
     // set gradient weights
-    double dC_dw_j_k = 0.0;
-    for (size_t j = 0; j < layer->grad_W->n_rows; j++){
-        for (size_t k = 0; k < layer->grad_W->n_cols; k++){
-            dC_dw_j_k = matrix_get(delta_grad_next, j, k) * matrix_get(layer->a_prev, k, 0);
-            matrix_set(layer->grad_W, j, k, dC_dw_j_k);            
+        double dC_dw_j_k = 0.0;
+        for (size_t j = 0; j < layer->grad_W->n_rows; j++){
+            for (size_t k = 0; k < layer->grad_W->n_cols; k++){
+                dC_dw_j_k = matrix_get(delta_grad_next, j, k) * matrix_get(layer->a_prev, k, 0);
+                matrix_set(layer->grad_W, j, k, dC_dw_j_k);            
+            }
         }
-    }
 
     // set bias gradients
-    double dC_db_j = 0.0;
-    for (size_t j = 0; j < layer->grad_b->n_rows; j++){
-        dC_db_j = matrix_get(delta_grad_next, j, 0);
-        matrix_set(layer->grad_b, j, 0, dC_db_j);
-    }
+        double dC_db_j = 0.0;
+        for (size_t j = 0; j < layer->grad_b->n_rows; j++){
+            dC_db_j = matrix_get(delta_grad_next, j, 0);
+            matrix_set(layer->grad_b, j, 0, dC_db_j);
+        }
 
 };
 
