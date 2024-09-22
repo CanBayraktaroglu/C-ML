@@ -8,6 +8,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "yaml.h"
+#include "matrix.h"
 
 #define TABLE_SIZE 10
 
@@ -502,6 +503,22 @@ float calculate_info_gain(Vector* parent, Vector* left, Vector* right, unsigned 
     float info_gain = parent_entropy - ((float)left->size / total) * left_entropy - ((float)right->size / total) * right_entropy;
     return info_gain;
 };
-
+float* dot_product(float* a, float* b, size_t n){
+    float* result = (float*)calloc(n, sizeof(float));
+    for (size_t i = 0; i < n; i++){
+        result[i] = a[i] * b[i];
+    }
+    return result;
+};
+Matrix* outer_product(float* a, float* b, size_t n){
+    Matrix* matrix = NULL;
+    matrix_create(&matrix, n, n);
+    for (size_t i = 0; i < n; i++){
+        for (size_t j = 0; j < n; j++){
+            matrix_set(matrix, i, j, a[i] * b[j]);
+        }
+    }
+    return matrix;
+};
 
 #endif
