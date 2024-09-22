@@ -1,5 +1,8 @@
-#include "dl.h"
+#include "models.h"
+#include "layers.h"
+#include "optimizer.h"
 #include "matrix.h"
+#include "loss.h"
 
 void main(void){
 
@@ -50,7 +53,6 @@ void main(void){
     // Optimize
         printf("OPTIMIZATION.\n");
         optimize_adam(optimizer, sequential_nn->layers);
-
 
     // Free allocated dynamic memory
         destroy_sequential_nn(sequential_nn);
