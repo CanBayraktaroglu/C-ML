@@ -44,6 +44,9 @@ void backward_L2_loss(Matrix* a_out, Matrix* y, Matrix** dC_da_out){
     matrix_subtract(a_out, y, &mat, 0);
     scalar_product(mat, 2.0, dC_da_out, 0);
 
+    matrix_destroy(mat);
+    free(mat);
+
 };
 
 void L1_loss(Matrix* prediction, Matrix* label, Matrix** loss){
@@ -181,7 +184,7 @@ void set_da_dz_feed_forward_layer(FeedForwardLayer* layer, Matrix* z){
 
 // Feed Forward Pass
 void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
-    layer->a_prev = X;
+    layer->a_prev = matrix_copy(X);
     Matrix* _X = matrix_copy(X);
     Matrix* W = matrix_copy(layer->weights);
     Matrix* b = matrix_copy(layer->biases);
@@ -209,22 +212,21 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
 void backprop_feed_forward_layer(FeedForwardLayer* layer, Matrix* delta_grad_next){ 
     double delta_grad_j = 0.0;
     double delta_grad_val = 0.0;
-    double da_dz_j = 0.0;
+    double da_dz_k = 0.0;
     double delta_k = 0.0;
     double w_k_j = 0.0;
 
     // Set grad_delta of the layer
-        for (size_t j = 0; j < layer->grad_delta->n_rows; j++){        
-            da_dz_j = matrix_get(layer->da_dz, j, 0);            
+        for (size_t j = 0; j < layer->grad_delta->n_rows; j++){    
+                
             delta_grad_val = 0.0;
-            
+
             for (size_t k = 0; k < delta_grad_next->n_rows; k++){
+                da_dz_k = matrix_get(layer->da_dz, k, 0);            
                 delta_k = matrix_get(delta_grad_next, k, 0);
                 w_k_j = matrix_get(layer->weights, k, j);
-                delta_grad_val += delta_k * w_k_j;
+                delta_grad_val += delta_k * w_k_j * da_dz_k;
             }
-
-            delta_grad_val *= da_dz_j;
             matrix_set(layer->grad_delta, j, 0, delta_grad_val);
         }
 
@@ -232,7 +234,7 @@ void backprop_feed_forward_layer(FeedForwardLayer* layer, Matrix* delta_grad_nex
         double dC_dw_j_k = 0.0;
         for (size_t j = 0; j < layer->grad_W->n_rows; j++){
             for (size_t k = 0; k < layer->grad_W->n_cols; k++){
-                dC_dw_j_k = matrix_get(delta_grad_next, j, k) * matrix_get(layer->a_prev, k, 0);
+                dC_dw_j_k = matrix_get(delta_grad_next, j, 0) * matrix_get(layer->a_prev, k, 0);
                 matrix_set(layer->grad_W, j, k, dC_dw_j_k);            
             }
         }
@@ -274,6 +276,10 @@ void destroy_feed_forward_layer(FeedForwardLayer* layer){
     matrix_destroy(layer->grad_delta);
     free(layer->grad_delta);
     layer->grad_delta = NULL;
+
+    matrix_destroy(layer->a_prev);
+    free(layer->a_prev);
+    layer->a_prev = NULL;
 };
 
 // Allocate memory for FFNN
@@ -365,10 +371,6 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t next_num_neur
     // Initialize delta_grad
     (*layer_dptr)->grad_delta = NULL;
     matrix_create(&((*layer_dptr)->grad_delta), num_neurons, 1);
-    
-    // Initialize a_i
-    //(*layer_dptr)->da_dz = NULL;
-    //matrix_create(&((*layer_dptr)->da_dz), next_num_neurons, 1);
 
     // set act_fn_mapping
     (*layer_dptr)->act_fn_mapping = act_fn_mapping;
@@ -534,7 +536,7 @@ void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
     }
 };
 
-void optimize_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char loss_fn){
+void backpropagate_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char loss_fn){
     
     Matrix* dC_da_out = NULL;
     switch(loss_fn){
@@ -548,7 +550,7 @@ void optimize_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char
     
     Matrix* delta_grad_next = dC_da_out;
 
-    for (size_t i = model->num_layers - 1; i >= 0; i--){
+    for (int i = model->num_layers - 1; i >= 0; i--){
         Layer* layer_ptr = model->layers + i;
         switch(layer_ptr->type){
             case FEED_FORWARD:
@@ -557,16 +559,6 @@ void optimize_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char
                 // Calculate Gradients
                 backprop_feed_forward_layer(ff_layer_ptr, delta_grad_next);
                 delta_grad_next = ff_layer_ptr->grad_delta;
-
-                // Update Weights
-                Matrix* layer_W = ff_layer_ptr->weights;
-                for (size_t i = 0; i < layer_W->n_rows; i++){
-                    for (size_t j = 0; j < layer_W->n_cols; j++){
-                        double w_i_j = matrix_get(layer_W, i, j);
-                        w_i_j -= 0.0;// OPTIMIZATION;
-
-                    }
-                }
 
                 break;
             default:
@@ -660,19 +652,34 @@ void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alph
     // Initialize
     for (size_t i = 0; i < num_layers; i++){
         Layer* layer_ptr = layers + i;
+
         switch(layer_ptr->type){
             case FEED_FORWARD:
                 FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                printf("Layer: %lu\n", i);
                 
                 //set rows and cols
-                matrix_realloc((*optimizer_dptr)->m_w_ptr + i, ff_layer_ptr->grad_W->n_rows, ff_layer_ptr->grad_W->n_cols);
-                matrix_realloc((*optimizer_dptr)->v_w_ptr + i, ff_layer_ptr->grad_W->n_rows, ff_layer_ptr->grad_W->n_cols);
-                matrix_realloc((*optimizer_dptr)->m_b_ptr + i, ff_layer_ptr->grad_b->n_rows, ff_layer_ptr->grad_b->n_cols);
-                matrix_realloc((*optimizer_dptr)->v_b_ptr + i, ff_layer_ptr->grad_b->n_rows, ff_layer_ptr->grad_b->n_cols);
+                ((*optimizer_dptr)->m_w_ptr + i)->data = (double*)calloc(ff_layer_ptr->grad_W->n_rows * ff_layer_ptr->grad_W->n_cols, sizeof(double));
+                ((*optimizer_dptr)->m_w_ptr + i)->n_rows = ff_layer_ptr->grad_W->n_rows; 
+                ((*optimizer_dptr)->m_w_ptr + i)->n_cols = ff_layer_ptr->grad_W->n_cols;
+                                
+                ((*optimizer_dptr)->v_w_ptr + i)->data = (double*)calloc(ff_layer_ptr->grad_W->n_rows * ff_layer_ptr->grad_W->n_cols, sizeof(double));
+                ((*optimizer_dptr)->v_w_ptr + i)->n_rows = ff_layer_ptr->grad_W->n_rows;
+                ((*optimizer_dptr)->v_w_ptr + i)->n_cols = ff_layer_ptr->grad_W->n_cols;
+
+                ((*optimizer_dptr)->m_b_ptr + i)->data = (double*)calloc(ff_layer_ptr->grad_b->n_rows * ff_layer_ptr->grad_b->n_cols, sizeof(double));
+                ((*optimizer_dptr)->m_b_ptr + i)->n_rows = ff_layer_ptr->grad_b->n_rows;
+                ((*optimizer_dptr)->m_b_ptr + i)->n_cols = ff_layer_ptr->grad_b->n_cols;   
+
+                ((*optimizer_dptr)->v_b_ptr + i)->data = (double*)calloc(ff_layer_ptr->grad_b->n_rows * ff_layer_ptr->grad_b->n_cols, sizeof(double));
+                ((*optimizer_dptr)->v_b_ptr + i)->n_rows = ff_layer_ptr->grad_b->n_rows;
+                ((*optimizer_dptr)->v_b_ptr + i)->n_cols = ff_layer_ptr->grad_b->n_cols;
+
+                break;
 
             default:
                 printf("Provided layer type not supported.\n");
-                break;     
+                exit(0);     
 
         }   
     }
@@ -688,7 +695,7 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
     for (size_t i = 0; i < optimizer->num_layers; i++){
         Layer* layer_ptr = layers + i;
         switch(layer_ptr->type){
-            case FEED_FORWARD:
+            case 0:
                 FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 for (size_t j = 0; j < ff_layer_ptr->grad_W->n_rows; j++){
                     for (size_t k =0; k < ff_layer_ptr->grad_W->n_cols; k++){
@@ -752,7 +759,8 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
 }
 
 void destroy_adam_optimizer(Adam_Optimizer* optimizer){
-    for (size_t i = optimizer->num_layers - 1; i >= 0; i++){
+    if (optimizer == NULL) return;
+    for (size_t i = optimizer->num_layers - 1; i >= 0; i--){
 
         // Free matrices
             matrix_destroy(optimizer->m_w_ptr + i);

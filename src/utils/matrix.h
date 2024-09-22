@@ -37,12 +37,12 @@ void matrix_destroy(Matrix* mat){
 
 void matrix_set(Matrix* mat,const size_t i,const size_t j,const double val){
     if (i >= mat->n_rows){
-        printf("row index exceeded matrix row number\n.");
+        printf("row index exceeded matrix row number.\n");
         exit(0);
     }
 
     if (j >= mat->n_cols){
-        printf("col index exceeded matrix col number\n.");
+        printf("col index exceeded matrix col number.\n");
         exit(0);
     }
     mat->data[i * mat->n_cols + j] = val;
@@ -50,12 +50,12 @@ void matrix_set(Matrix* mat,const size_t i,const size_t j,const double val){
 
 double matrix_get(const Matrix* mat, const size_t i, const size_t j){
     if (i >= mat->n_rows){
-        printf("row index exceeded matrix row number\n.");
+        printf("row index exceeded matrix row number.\n");
         exit(0);
     }
     
     if (j >= mat->n_cols){
-        printf("col index exceeded matrix col number\n.");
+        printf("col index exceeded matrix col number.\n");
         exit(0);
     }
 
