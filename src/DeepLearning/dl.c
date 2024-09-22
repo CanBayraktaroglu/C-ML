@@ -32,8 +32,7 @@ void main(void){
     // Optimizer
         Adam_Optimizer* optimizer = NULL;
         printf("INITIALIZE OPTIMIZER.\n");
-        //init_Adam_optimizer(&optimizer, 0.004f, 0.5f, 0.9f, 0.9f, 0.000001f, sequential_nn->layers, sequential_nn->num_layers);
-        //matrix_print(optimizer->m_w_ptr);
+        init_Adam_optimizer(&optimizer, 0.004f, 0.5f, 0.9f, 0.9f, 0.000001f, sequential_nn->layers, sequential_nn->num_layers);
 
     // data
         double label[2][1] = {30, 20};
@@ -50,7 +49,8 @@ void main(void){
 
     // Optimize
         printf("OPTIMIZATION.\n");
-        //optimize_adam(optimizer, sequential_nn->layers);
+        optimize_adam(optimizer, sequential_nn->layers);
+
 
     // Free allocated dynamic memory
         destroy_sequential_nn(sequential_nn);

@@ -760,7 +760,7 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
 
 void destroy_adam_optimizer(Adam_Optimizer* optimizer){
     if (optimizer == NULL) return;
-    for (size_t i = optimizer->num_layers - 1; i >= 0; i--){
+    for (int i = optimizer->num_layers - 1; i >= 0; i--){
 
         // Free matrices
             matrix_destroy(optimizer->m_w_ptr + i);
