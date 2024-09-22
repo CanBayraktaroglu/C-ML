@@ -58,8 +58,30 @@ Best scores:
   Precision:
     Class 0: 1.00
     Class 1: 0.90
-    Class 2: 0.941176
+    Class 2: 0.941176 
 ```
+
+## Deep Learning Project
+
+The Deep Learning project is an ambitious undertaking to implement neural networks from scratch in C. This project demonstrates the power and flexibility of C in handling complex mathematical operations and memory management required for deep learning algorithms.
+The Deep Learning project is organized as follows:
+
+- `src/DeepLearning/`: Contains the source code for the Deep Learning implementation. Key files include:
+
+  - [`dl.c`](src/DeepLearning/dl.c): The main entry point for the program.
+  - [`dl.h`](src/DeepLearning/dl.h): Header file for the Deep Learning implementation.
+
+This project implements a modular neural network architecture, allowing for the creation of various network topologies. It includes implementations of:
+
+Feedforward layers
+Activation functions (ReLU, Sigmoid, Tanh)
+Optimization algorithms (Stochastic Gradient Descent, Adam)
+Loss functions (Mean Squared Error, Cross-Entropy)
+
+The neural network can be trained using backpropagation and supports both classification and regression tasks.
+To use the Deep Learning implementation, you need to define your network architecture, prepare your dataset, and then use the provided functions to train and evaluate your model. Detailed usage instructions can be found in the source code comments.
+Performance metrics and example use cases will be added as the project progresses.
+Future plans for this project include implementing more advanced architectures like Recurrent Neural Networks (RNNs) and Long Short-Term Memory networks (LSTMs), as well as optimizing the code for better performance on large datasets.
 
 ## Building and Running the Project
 
