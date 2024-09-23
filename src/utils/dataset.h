@@ -8,12 +8,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "math.h"
+#include "matrix.h"
 
 typedef struct{
 	Vector* vec;
 	unsigned char num_classes;
 	
 }Dataset;
+
+typedef struct{
+	Matrix* data;
+}Dataset_;
+
+Dataset_* Dataset__New(size_t N){
+	Dataset_* dataset = (Dataset_*)malloc(sizeof(Dataset_));
+	dataset->data = (Matrix*)malloc(N * sizeof(Matrix));
+	return dataset;
+}; 
 
 Dataset* dataset_create(){
 	Dataset* dataset = (Dataset*) malloc(sizeof(Dataset));

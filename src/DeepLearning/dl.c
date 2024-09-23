@@ -53,7 +53,7 @@ void main(void){
     // Optimize
         printf("OPTIMIZATION.\n");
         optimize_adam(optimizer, sequential_nn->layers);
-
+        
     // Free allocated dynamic memory
         destroy_sequential_nn(sequential_nn);
         free(sequential_nn);
