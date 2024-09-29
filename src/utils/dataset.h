@@ -18,13 +18,18 @@ typedef struct{
 
 typedef struct{
 	Matrix* data;
+	size_t N;
 }Dataset_;
 
-Dataset_* Dataset__New(size_t N){
+Dataset_* Dataset_New(){
 	Dataset_* dataset = (Dataset_*)malloc(sizeof(Dataset_));
-	dataset->data = (Matrix*)malloc(N * sizeof(Matrix));
 	return dataset;
 }; 
+
+void dataset_initialize_(Dataset_* dataset, size_t N){
+	dataset->N = N;	
+	dataset->data = (Matrix*)malloc(N * sizeof(Matrix));
+};
 
 Dataset* dataset_create(){
 	Dataset* dataset = (Dataset*) malloc(sizeof(Dataset));
@@ -236,5 +241,30 @@ void dataset_split(Dataset* dataset, Dataset* train, Dataset* test, float ratio)
 	
 	train->num_classes = dataset->num_classes;
 	test->num_classes = dataset->num_classes;
+};
+
+void dataset_shuffle_(Dataset_* dataset){
+		
+};
+
+void dataset_split_(Dataset_* dataset, Dataset_* train, Dataset_* test, double ratio){
+	size_t N = dataset->N;
+	size_t train_size = (size_t)(ratio*N);
+	size_t test_size = N - train_size;
+
+	// TODO add shuffle functionality to dataset
+
+	// Copy matrices to the train dataset
+	Matrix* matrix_ptr = NULL;
+	for (size_t i = 0; i < N; i++){
+		matrix_ptr = dataset->data + i;
+
+		if (i < train_size){
+			memcpy(train->data + i, matrix_ptr, sizeof(Matrix));
+			continue;
+		}
+
+		memcpy(test->data + i, matrix_ptr, sizeof(Matrix));
+	}
 };
 #endif
