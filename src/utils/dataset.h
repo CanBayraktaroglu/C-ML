@@ -9,6 +9,7 @@
 #include <string.h>
 #include "math.h"
 #include "matrix.h"
+#include "time.h"
 
 typedef struct{
 	Vector* vec;
@@ -244,7 +245,36 @@ void dataset_split(Dataset* dataset, Dataset* train, Dataset* test, float ratio)
 };
 
 void dataset_shuffle_(Dataset_* dataset){
-		
+	Matrix* tmp_1 = (Matrix*)malloc(sizeof(Matrix));
+	Matrix* tmp_2 = (Matrix*)malloc(sizeof(Matrix));
+
+	for (size_t i = 0; i < dataset->N; i++){
+		size_t j = rand() % dataset->N;
+
+		// copy matrix at i to temporary buffer 1
+		memcpy(tmp_1, dataset->data + i, sizeof(Matrix));
+		matrix_destroy(dataset->data + i);
+
+		// copy matrix at j to temporary buffer 2
+		memcpy(tmp_2, dataset->data + j, sizeof(Matrix));
+		matrix_destroy(dataset->data + j);
+
+		//copy matrix at tmp_1 to memory at j
+		memcpy(dataset->data + j, tmp_1, sizeof(Matrix));
+
+		//copy matrix at tmp_2 to memory at i
+		memcpy(dataset->data + i, tmp_2, sizeof(Matrix));
+
+		// erase memory in the temporary buffers
+		matrix_destroy(tmp_1);
+		matrix_destroy(tmp_2);
+
+	}	
+
+	free(tmp_1);
+	tmp_1 = NULL;
+	free(tmp_2);
+	tmp_2 = NULL;
 };
 
 void dataset_split_(Dataset_* dataset, Dataset_* train, Dataset_* test, double ratio){
@@ -252,7 +282,8 @@ void dataset_split_(Dataset_* dataset, Dataset_* train, Dataset_* test, double r
 	size_t train_size = (size_t)(ratio*N);
 	size_t test_size = N - train_size;
 
-	// TODO add shuffle functionality to dataset
+	// shuffle dataset
+	dataset_shuffle_(dataset);
 
 	// Copy matrices to the train dataset
 	Matrix* matrix_ptr = NULL;
