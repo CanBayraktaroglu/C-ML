@@ -27,7 +27,7 @@ Dataset_* Dataset_New(){
 	return dataset;
 }; 
 
-void dataset_initialize_(Dataset_* dataset, size_t N){
+void dataset_initialize_(Dataset_* dataset, const size_t N){
 	dataset->N = N;	
 	dataset->data = (Matrix*)malloc(N * sizeof(Matrix));
 };
@@ -39,7 +39,7 @@ Dataset* dataset_create(){
 	return dataset;	
 };
 
-void dataset_set_vector(Dataset* dataset, Vector* vec){
+void dataset_set_vector(Dataset* dataset, const Vector* vec){
 	if (dataset->vec == NULL){
 		dataset->vec = (Vector*) malloc(sizeof(Vector));
 	}
@@ -47,11 +47,11 @@ void dataset_set_vector(Dataset* dataset, Vector* vec){
 	//dataset->vec = vec;
 };
 
-void dataset_set_num_classes(Dataset* dataset, unsigned char num_classes){
+void dataset_set_num_classes(Dataset* dataset, const unsigned char num_classes){
 	dataset->num_classes = num_classes;
 };
 
-void dataset_initialize(Dataset* dataset, unsigned short int initial_capacity){
+void dataset_initialize(Dataset* dataset, const unsigned short int initial_capacity){
 	dataset->vec = vector_create(initial_capacity);
 	//memcpy(dataset->vec, vector_create(initial_capacity), sizeof(Vector));
 };
@@ -219,7 +219,7 @@ void dataset_print(Dataset* dataset){
 	vector_print(dataset->vec);
 };
 
-void dataset_split(Dataset* dataset, Dataset* train, Dataset* test, float ratio){
+void dataset_split(Dataset* dataset, Dataset* train, Dataset* test, const float ratio){
 	unsigned short int N = dataset->vec->size;
 	unsigned short int train_size = (unsigned short int)(ratio * N);
 	unsigned short int test_size = N - train_size;

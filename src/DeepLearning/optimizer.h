@@ -61,7 +61,7 @@ typedef struct{
     Matrix* v_b_ptr;
 }Adam_Optimizer;
 
-void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, double lr, double alpha, double beta_1, double beta_2, double epsilon, Layer* layers, size_t num_layers){
+void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const double alpha, const double beta_1,  const double beta_2, const double epsilon, Layer* layers, const size_t num_layers){
     if (*optimizer_dptr == NULL){
         *optimizer_dptr = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
     }

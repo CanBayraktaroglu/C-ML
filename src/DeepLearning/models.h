@@ -23,7 +23,7 @@ typedef struct{
 }Sequential_NN;
 
 // Allocate memory on the heap for Sequential NN
-Sequential_NN* create_Sequential_NN(size_t input_size, size_t hidden_size, size_t output_size, size_t num_layers, char layer_type, char act_fn){
+Sequential_NN* create_Sequential_NN(const size_t input_size, const size_t hidden_size, const size_t output_size, const size_t num_layers, const char layer_type, const char act_fn){
     Sequential_NN* sequential_nn = (Sequential_NN*)calloc(1, sizeof(Sequential_NN));
 
     sequential_nn->input_size = input_size;
@@ -34,7 +34,7 @@ Sequential_NN* create_Sequential_NN(size_t input_size, size_t hidden_size, size_
     return sequential_nn;
 };
 
-void init_sequential_nn(Sequential_NN** model, size_t input_size, size_t hidden_size, size_t output_size) {
+void init_sequential_nn(Sequential_NN** model, const size_t input_size, const size_t hidden_size, const size_t output_size) {
     
     *model = (Sequential_NN*)calloc(1, sizeof(Sequential_NN)); 
     Sequential_NN* model_ptr = *model;
@@ -79,7 +79,7 @@ void destroy_sequential_nn(Sequential_NN* model_ptr){
     model_ptr->layers = NULL;
 };
 
-void add_feed_forward_layer(Sequential_NN* model_ptr, size_t output_size, size_t input_size, char act_fn_mapping){
+void add_feed_forward_layer(Sequential_NN* model_ptr, size_t output_size, size_t input_size, const char act_fn_mapping){
     if (model_ptr == NULL){
         printf("Passed model pointer is NULL.\n");
         exit(0);
@@ -140,7 +140,7 @@ void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
     }
 };
 
-void backpropagate_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, char loss_fn){
+void backpropagate_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, const char loss_fn){
     
     Matrix* dC_da_out = NULL;
     switch(loss_fn){
