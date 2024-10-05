@@ -10,7 +10,8 @@
 #pragma region Feed Forward Layer 
 
 // FEED FORWARD Layer
-typedef struct {
+typedef struct FeedForwardLayer{
+    struct FeedForwardLayer* self;
     size_t next_num_neurons;
     size_t num_neurons;
     void (*act_fn)(Matrix* X);
@@ -187,6 +188,9 @@ void destroy_feed_forward_layer(FeedForwardLayer* layer){
 FeedForwardLayer* create_feed_forward_layer(size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
     FeedForwardLayer* layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
 
+    // set self
+    layer->self = layer;
+
     // Set the neuron numbers
     layer->next_num_neurons = next_num_neurons;
     layer->num_neurons = num_neurons;
@@ -235,6 +239,7 @@ FeedForwardLayer* create_feed_forward_layer(size_t next_num_neurons, size_t num_
 };
 
 void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
+    
     // Set the neuron numbers
     (*layer_dptr)->next_num_neurons = next_num_neurons;
     (*layer_dptr)->num_neurons = num_neurons;

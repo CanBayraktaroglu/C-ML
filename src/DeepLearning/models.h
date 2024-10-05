@@ -14,7 +14,8 @@
 #pragma region Sequential Neural Network 
 
 // Sequential NN
-typedef struct{
+typedef struct Sequential_NN{
+    struct Sequential_NN* self;
     size_t input_size;
     size_t hidden_size;
     size_t output_size;
@@ -26,6 +27,7 @@ typedef struct{
 Sequential_NN* create_Sequential_NN(const size_t input_size, const size_t hidden_size, const size_t output_size, const size_t num_layers, const char layer_type, const char act_fn){
     Sequential_NN* sequential_nn = (Sequential_NN*)calloc(1, sizeof(Sequential_NN));
 
+    sequential_nn->self = sequential_nn;
     sequential_nn->input_size = input_size;
     sequential_nn->hidden_size = hidden_size;
     sequential_nn->output_size = output_size;
@@ -45,6 +47,7 @@ void init_sequential_nn(Sequential_NN** model, const size_t input_size, const si
     }
 
     // Set the attributes
+    model_ptr->self = *model;
     model_ptr->input_size = input_size;
     model_ptr->hidden_size = hidden_size;
     model_ptr->output_size = output_size;
