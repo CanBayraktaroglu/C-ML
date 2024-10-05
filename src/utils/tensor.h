@@ -101,6 +101,9 @@ static double tensor_get_grad(Tensor* self, const size_t i, const size_t j){
     return node->get_grad(node);
 
 };
+
+static ADNode* tensor_get_node(Tensor* self, const size_t i, const size_t)
+
 void tensor_transpose_inplace(Tensor* self){
     ADNode* temp = (ADNode*)malloc(sizeof(ADNode));
     
@@ -133,10 +136,13 @@ Tensor* tensor_transpose(Tensor* self){
 };
 
 void tensor_scalar_product(Tensor* self, const double scalar){
-    
+   Tensor* result = tensor_new(self->n_rows, self->n_cols); 
 
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
+            const double val = self->get_val(self, i, j);
+            self->
+
             Tensor_set(*output, i, j, scalar * Tensor_get(mat, i, j));
         }
     }
@@ -364,10 +370,12 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     // Set methods
     tensor->realloc = tensor_realloc;
     tensor->destroy = tensor_destroy;
-    tensor->set = tensor_set;
-    tensor->get = tensor_get;   
+    tensor->set_val = tensor_set_val;
+    tensor->set_grad = tensor_set_grad;
+    tensor->get_val = tensor_get_val;
+    tensor->get_grad = tensor_get_grad;   
 
-    return tensor
+    return tensor;
 };
 
 #endif // __TENSOR_H__
