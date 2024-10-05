@@ -12,8 +12,8 @@ typedef struct {
 
 // Node in the computational graph
 typedef struct ADNode {
-    struct ADNode* self;    
-    struct ADNode** parents;
+    ADNode* self;    
+    ADNode** parents;
     Dual data;
     int num_parents;
     size_t topology_idx;
@@ -28,10 +28,10 @@ typedef struct ADNode {
 }ADNode;
 
 void free_node(ADNode* node){
-if (node){
-    free(node->parents);
-    free(node);
-}
+    if (node){
+        free(node->parents);
+        free(node);
+    }
 };
 
 // Basic backward operations
