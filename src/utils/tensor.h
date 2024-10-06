@@ -159,9 +159,9 @@ Tensor* tensor_scalar_product(Tensor* self, const double scalar){
 };
 
 void tensor_scalar_product_inplace(Tensor* self, const double scalar){ 
-
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
+                        
             ADNode* node = self->get_node(self, i, j);
             self->set_val(self, i, j, node->get_val(node) * scalar);
         }

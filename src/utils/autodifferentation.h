@@ -74,6 +74,7 @@ static double node_get_val(ADNode* self){
 static double node_get_grad(ADNode* self){
     return self->data.grad;
 }
+
 ADNode* node_add(ADNode* self, ADNode* node){
     ADNode* result = (ADNode*)malloc(sizeof(ADNode));
     result->data.grad = 0.0;
@@ -161,6 +162,8 @@ ADNode* node_new(double value, int num_parents) {
 
     return node;
 }
+
+#pragma region Computation Graph
 
 // ADNODE GRAPH IMPLEMENTATION
 // Graph Structure
@@ -256,4 +259,6 @@ ComputeGraph* graph_new(){
     graph->backward = backward_pass;
     return graph; 
 };
+#pragma endregion Computation Graph
+
 #endif // AUTODIFF_H
