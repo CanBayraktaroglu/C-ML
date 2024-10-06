@@ -24,6 +24,9 @@ typedef struct ADNode {
     void (*set_grad)(ADNode* self, const double grad);
     double (*get_val)(ADNode* self);
     double (*get_grad)(ADNode* self);
+    ADNode* (*add)(ADNode* self, ADNode* node);
+    ADNode* (*multiply)(ADNode* self, ADNode* node);
+    ADNode* (*subtract)(ADNode* self, ADNode* node);
 
 }ADNode;
 
@@ -71,6 +74,68 @@ static double node_get_val(ADNode* self){
 static double node_get_grad(ADNode* self){
     return self->data.grad;
 }
+ADNode* node_add(ADNode* self, ADNode* node){
+    ADNode* result = (ADNode*)malloc(sizeof(ADNode));
+    result->data.grad = 0.0;
+    result->num_parents = 2;
+    result->parents = (ADNode**)malloc(2 * sizeof(ADNode*));
+    
+    //Set Methods
+    result->backward = NULL;
+    result->free = free_node;
+    result->set_val = node_set_val;
+    result->set_grad = node_set_grad;
+    result->get_val = node_get_val;
+    result->get_grad = node_get_grad;
+    result->data.value = self->get_val(self) + node->get_val(node);
+
+    result->parents[0] = self;
+    result->parents[1] = node;
+    result->backward = backward_add;
+    return result;
+};
+
+ADNode* node_multiply(ADNode* self, ADNode* node){
+    ADNode* result = (ADNode*)malloc(sizeof(ADNode));
+    result->data.grad = 0.0;
+    result->num_parents = 2;
+    result->parents = (ADNode**)malloc(2 * sizeof(ADNode*));
+    
+    //Set Methods
+    result->backward = NULL;
+    result->free = free_node;
+    result->set_val = node_set_val;
+    result->set_grad = node_set_grad;
+    result->get_val = node_get_val;
+    result->get_grad = node_get_grad;
+    result->data.value = self->get_val(self) * node->get_val(node);
+
+    result->parents[0] = self;
+    result->parents[1] = node;
+    result->backward = backward_multiply;
+    return result;
+};
+ADNode* node_subtract(ADNode* self, ADNode* node){
+    ADNode* result = (ADNode*)malloc(sizeof(ADNode));
+    result->data.grad = 0.0;
+    result->num_parents = 2;
+    result->parents = (ADNode**)malloc(2 * sizeof(ADNode*));
+    
+    //Set Methods
+    result->backward = NULL;
+    result->free = free_node;
+    result->set_val = node_set_val;
+    result->set_grad = node_set_grad;
+    result->get_val = node_get_val;
+    result->get_grad = node_get_grad;
+    result->data.value = self->get_val(self) - node->get_val(node);
+
+    result->parents[0] = self;
+    result->parents[1] = node;
+    result->backward = backward_subtract;
+    return result;
+
+};
 
 ADNode* node_new(double value, int num_parents) {
     ADNode* node = (ADNode*)malloc(sizeof(ADNode));
@@ -90,30 +155,12 @@ ADNode* node_new(double value, int num_parents) {
     node->set_grad = node_set_grad;
     node->get_val = node_get_val;
     node->get_grad = node_get_grad;
+    node->add = node_add;
+    node->multiply = node_multiply;
+    node->subtract = node->subtract;
 
     return node;
 }
-
-
-ADNode* add(ADNode* a, ADNode* b){
-    ADNode* result = node_new(a->data.value + b->data.value, 2);
-    result->parents[0] = a;
-    result->parents[1] = b;
-    result->backward = backward_add;
-    return result;
-}
-ADNode* multiply(ADNode* a, ADNode* b){
-    ADNode* result = node_new(a->data.value * b->data.value, 2);
-    result->parents[0] = a;
-    result->parents[1] = b;
-    result->backward = backward_multiply; 
-};
-ADNode* subtract(ADNode* a, ADNode* b){
-    ADNode* result = node_new(a->data.value - b->data.value, 2);
-    result->parents[0] = a;
-    result->parents[1] = b;
-    result->backward = backward_subtract;
-};
 
 // ADNODE GRAPH IMPLEMENTATION
 // Graph Structure
@@ -141,7 +188,7 @@ void add_node_to_graph(ComputeGraph* self, ADNode* node){
 void free_graph(ComputeGraph* self){
     if (self){
         for (size_t i=0; i < self->num_nodes; i++){
-            const ADNode* node = self->nodes[i];
+            ADNode* node = self->nodes[i];
             node->free(node);
 
         }

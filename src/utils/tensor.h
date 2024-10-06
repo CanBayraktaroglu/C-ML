@@ -17,6 +17,8 @@ typedef struct Tensor{
     static double (*get_grad)(Tensor* self, const size_t i, const size_t j);
     static void (*set_val)(Tensor* self, const size_t i, const size_t j, const double val);
     static void (*set_grad)(Tensor* self, const size_t i, const size_t j, const double grad);
+    static ADNode* (*get_node)(Tensor* self, const size_t i, const size_t j);
+    void (*set_node)(Tensor* self, ADNode* node, const size_t i, const size_t j);
 } Tensor;
 
 
@@ -26,13 +28,20 @@ void tensor_realloc(Tensor* self, const size_t n_rows, const size_t n_cols){
     self->n_cols = n_cols;
 };
 
+static ADNode* tensor_get_node(Tensor* self, const size_t i, const size_t j){
+    return self->nodes[i *  self->n_cols + j];
+};
+
+void tensor_set_node(Tensor* self, ADNode* node, const size_t i, const size_t j){
+    self->nodes[i * self->n_cols + j] = node;
+};
+
 void tensor_destroy(Tensor* self){
     if (self == NULL) return;
 
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
-            const size_t idx = i * self->n_cols + j;
-            ADNode* node = self->nodes[idx];
+            ADNode* node = self->get_node(self, i, j);
             node->free(node);
 
         }
@@ -102,7 +111,6 @@ static double tensor_get_grad(Tensor* self, const size_t i, const size_t j){
 
 };
 
-static ADNode* tensor_get_node(Tensor* self, const size_t i, const size_t)
 
 void tensor_transpose_inplace(Tensor* self){
     ADNode* temp = (ADNode*)malloc(sizeof(ADNode));
@@ -135,49 +143,65 @@ Tensor* tensor_transpose(Tensor* self){
     return temp;
 };
 
-void tensor_scalar_product(Tensor* self, const double scalar){
+Tensor* tensor_scalar_product(Tensor* self, const double scalar){
    Tensor* result = tensor_new(self->n_rows, self->n_cols); 
 
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
-            const double val = self->get_val(self, i, j);
-            self->
-
-            Tensor_set(*output, i, j, scalar * Tensor_get(mat, i, j));
+            ADNode* source_node = self->get_node(self, i, j);
+            ADNode* target_node = result->get_node(result, i, j);
+            ADNode* constant_node = node_new(scalar, 0);
+            ADNode* resulting_node = source_node->add(source_node, constant_node);
+            memcpy(target_node, resulting_node, sizeof(ADNode));
         }
     }
-
+    return result;
 };
 
-void Tensor_add(Tensor* a, Tensor* b, Tensor** output, const unsigned char free){
-    if (a == NULL){
+void tensor_scalar_product_inplace(Tensor* self, const double scalar){ 
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            self->set_val(self, i, j, node->get_val(node) * scalar);
+        }
+    }
+};
+
+void tensor_add(Tensor* self, Tensor* tensor){
+    if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
     }
 
-    if (b == NULL){
+    if (tensor == NULL){
         printf("Tensor b is pointing to an empty address\n.");
         return;
     }
 
-    if (a->n_rows != b->n_rows || a->n_cols != b->n_cols){
+    if (self->n_rows != tensor->n_rows || self->n_cols != tensor->n_cols){
         printf("Tensor dimensions do not match for addition\n.");
         exit(0);
     }
-    if (*output == NULL){
-        Tensor_create(output, a->n_rows, a->n_cols);
-    }
-    else {
-        // reallocate memory for output
-        Tensor_realloc(*output, a->n_rows, a->n_cols);
-    }
 
-    for (size_t i = 0; i < a->n_rows; i++){
-        for (size_t j = 0; j < a->n_cols; j++){
-            Tensor_set(*output, i, j, Tensor_get(a, i, j) + Tensor_get(b, i, j));
+    Tensor* result = tensor_new(self->n_rows, self->n_cols);
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            const double val = self->get_val(self, i, j) + tensor->get_val(tensor, i, j);
+            result->set_val(result, i, j, val);
         }
     }
-    if (free) {Tensor_destroy(a); Tensor_destroy(b);}
+};
+
+void tensor_add_inplace(Tensor* self, Tensor* tensor){
+    
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            const double val = self->get_val(self, i, j) + tensor->get_val(tensor, i, j);
+            self->set_val(self, i, j, val);    
+        }
+    }
 };
 
 void Tensor_subtract(Tensor* a, Tensor* b, Tensor** output, const unsigned char free){
@@ -374,6 +398,8 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     tensor->set_grad = tensor_set_grad;
     tensor->get_val = tensor_get_val;
     tensor->get_grad = tensor_get_grad;   
+    tensor->get_node = tensor_get_node;
+    tensor->set_node = tensor_set_node;
 
     return tensor;
 };
