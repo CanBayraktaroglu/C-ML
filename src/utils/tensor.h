@@ -151,7 +151,7 @@ Tensor* tensor_scalar_product(Tensor* self, const double scalar){
             ADNode* source_node = self->get_node(self, i, j);
             ADNode* target_node = result->get_node(result, i, j);
             ADNode* constant_node = node_new(scalar, 0);
-            ADNode* resulting_node = source_node->add(source_node, constant_node);
+            ADNode* resulting_node = source_node->multiply(source_node, constant_node);
             memcpy(target_node, resulting_node, sizeof(ADNode));
         }
     }
@@ -162,13 +162,15 @@ void tensor_scalar_product_inplace(Tensor* self, const double scalar){
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
                         
-            ADNode* node = self->get_node(self, i, j);
-            self->set_val(self, i, j, node->get_val(node) * scalar);
+            ADNode* source_node = self->get_node(self, i, j);
+            ADNode* constant_node = node_new(scalar, 0);
+            ADNode* target_node = source_node->multiply(source_node, constant_node);
+            self->set_node(self, target_node, i, j);
         }
     }
 };
 
-void tensor_add(Tensor* self, Tensor* tensor){
+Tensor* tensor_add(Tensor* self, Tensor* tensor){
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
@@ -188,6 +190,7 @@ void tensor_add(Tensor* self, Tensor* tensor){
 
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* from_node = self->get_node(self, i, j);
             const double val = self->get_val(self, i, j) + tensor->get_val(tensor, i, j);
             result->set_val(result, i, j, val);
         }
