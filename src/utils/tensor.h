@@ -301,18 +301,51 @@ void tensor_print_grad(Tensor* self){
     }
 }
 
-Tensor* Tensor_multiply(Tensor* a, Tensor* b, Tensor** output, const unsigned char free){
-    if (a == NULL){
+Tensor* tensor_multiply(Tensor* self, Tensor* tensor){
+    if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
     }
 
-    if (b == NULL){
+    if (tensor == NULL){
         printf("Tensor b is pointing to an empty address\n.");
         return;
     }
 
-    if (a->n_cols != b->n_rows){
+    if (self->n_cols != tensor->n_rows){
+        printf("Tensor dimensions do not match for multiplication.\n");
+        exit(0);
+    }
+    
+    Tensor* result = tensor_new(self->n_rows, tensor->n_cols); 
+    
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < tensor->n_cols; j++){
+            double sum = 0.0;
+            for (size_t k = 0; k < self->n_cols; k++){
+                sum += self->get_val(self, i, k) * tensor->get_val(tensor, k, j);
+            }
+            
+            result->get_node(result, i, j)->
+            Tensor_set(*output, i, j, sum);
+        }
+    }
+
+};
+
+
+void tensor_multiply_inplace(Tensor* self, Tensor* tensor){
+    if (self == NULL){
+        printf("Tensor a is pointing to an empty address\n.");
+        return;
+    }
+
+    if (tensor == NULL){
+        printf("Tensor b is pointing to an empty address\n.");
+        return;
+    }
+
+    if (self->n_cols != tensor->n_rows){
         printf("Tensor dimensions do not match for multiplication.\n");
         exit(0);
     }
