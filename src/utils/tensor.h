@@ -7,18 +7,24 @@
 #include "autodifferentation.h"
 
 typedef struct Tensor{
-    struct Tensor* self;
-    ADNode** nodes;
-    size_t n_rows;
-    size_t n_cols;
-    void (*realloc)(Tensor* self, const size_t n_rows, const size_t n_cols);
-    void (*destroy)(Tensor* self);
-    static double (*get_val)(Tensor* self, const size_t i, const size_t j);
-    static double (*get_grad)(Tensor* self, const size_t i, const size_t j);
-    static void (*set_val)(Tensor* self, const size_t i, const size_t j, const double val);
-    static void (*set_grad)(Tensor* self, const size_t i, const size_t j, const double grad);
-    static ADNode* (*get_node)(Tensor* self, const size_t i, const size_t j);
-    void (*set_node)(Tensor* self, ADNode* node, const size_t i, const size_t j);
+    
+    // Attributes
+        struct Tensor* self;
+        ADNode** nodes;
+        size_t n_rows;
+        size_t n_cols;
+    
+    // Methods
+        void (*realloc)(Tensor* self, const size_t n_rows, const size_t n_cols);
+        void (*destroy)(Tensor* self);
+        static double (*get_val)(Tensor* self, const size_t i, const size_t j);
+        static double (*get_grad)(Tensor* self, const size_t i, const size_t j);
+        static void (*set_val)(Tensor* self, const size_t i, const size_t j, const double val);
+        static void (*set_grad)(Tensor* self, const size_t i, const size_t j, const double grad);
+        static ADNode* (*get_node)(Tensor* self, const size_t i, const size_t j);
+        void (*set_node)(Tensor* self, ADNode* node, const size_t i, const size_t j);
+        void (*print_val)(Tensor* self);
+        void (*print_grad)(Tensor* self);
 } Tensor;
 
 
@@ -190,64 +196,112 @@ Tensor* tensor_add(Tensor* self, Tensor* tensor){
 
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
-            ADNode* from_node = self->get_node(self, i, j);
-            const double val = self->get_val(self, i, j) + tensor->get_val(tensor, i, j);
-            result->set_val(result, i, j, val);
+            ADNode* node_A = self->get_node(self, i, j);
+            ADNode* node_B = tensor->get_node(tensor, i, j);
+            ADNode* resulting_node = node_A->add(node_A, node_B);
+
+            result->set_node(result, resulting_node, i, j);
         }
     }
+
+    return result;
 };
 
 void tensor_add_inplace(Tensor* self, Tensor* tensor){
     
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
-            const double val = self->get_val(self, i, j) + tensor->get_val(tensor, i, j);
-            self->set_val(self, i, j, val);    
+            ADNode* node_A = self->get_node(self, i, j);
+            ADNode* node_B = tensor->get_node(tensor, i, j);
+            
+            ADNode* resulting_node = node_A->add(node_A, node_B);
+            self->set_node(self, resulting_node, i, j);
+
         }
     }
 };
 
-void Tensor_subtract(Tensor* a, Tensor* b, Tensor** output, const unsigned char free){
-    if (a == NULL){
+Tensor* tensor_subtract(Tensor* self, Tensor* tensor){
+    if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
     }
 
-    if (b == NULL){
+    if (tensor == NULL){
         printf("Tensor b is pointing to an empty address\n.");
         return;
     }
 
-    if (a->n_rows != b->n_rows || a->n_cols != b->n_cols){
+    if (self->n_rows != tensor->n_rows || self->n_cols != tensor->n_cols){
         printf("Tensor dimensions do not match for subtraction.\n");
         exit(0);
     }
-    if (*output == NULL){
-        Tensor_create(output, a->n_rows, a->n_cols);
-    }
-    else {
-        // reallocate memory for output
-        Tensor_realloc(*output, a->n_rows, a->n_cols);
-    }
+
+    Tensor* result = tensor_new(self->n_rows, self->n_cols);
     
-    for (size_t i = 0; i < a->n_rows; i++){
-        for (size_t j = 0; j < a->n_cols; j++){
-            Tensor_set(*output, i, j, Tensor_get(a, i, j) - Tensor_get(b, i, j));
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node_A = self->get_node(self, i, j);
+            ADNode* node_B = tensor->get_node(tensor, i, j);
+            
+            ADNode* resulting_node = node_A->subtract(node_A, node_B);
+            result->set_node(result, resulting_node, i, j);
         }
     }
-    if (free) {Tensor_destroy(a); Tensor_destroy(b);}
+
+    return result;
 };
 
-void Tensor_print(Tensor* mat){
-    for(size_t i = 0; i < mat->n_rows; i++){
-        for(size_t j = 0; j < mat->n_cols; j++){
-            printf("%f ", Tensor_get(mat, i, j));
+void tensor_subtract_inplace(Tensor* self, Tensor* tensor){
+    if (self == NULL){
+        printf("Tensor a is pointing to an empty address\n.");
+        return;
+    }
+
+    if (tensor == NULL){
+        printf("Tensor b is pointing to an empty address\n.");
+        return;
+    }
+
+    if (self->n_rows != tensor->n_rows || self->n_cols != tensor->n_cols){
+        printf("Tensor dimensions do not match for subtraction.\n");
+        exit(0);
+    }
+    
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node_A = self->get_node(self, i, j);
+            ADNode* node_B = tensor->get_node(tensor, i, j);
+            
+            ADNode* resulting_node = node_A->subtract(node_A, node_B);
+            self->set_node(self, resulting_node, i, j);
+        }
+    }
+
+};
+
+void tensor_print_val(Tensor* self){
+    for(size_t i = 0; i < self->n_rows; i++){
+        for(size_t j = 0; j < self->n_cols; j++){
+            const double val = self->get_val(self, i, j);
+
+            printf("%f ", val);
         }
         printf("\n");
     }
 };
 
-void Tensor_multiply(Tensor* a, Tensor* b, Tensor** output, const unsigned char free){
+void tensor_print_grad(Tensor* self){
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            const double grad = self->get_grad(self, i, j);
+            printf("%f ", grad);  
+        }
+        printf("\n");
+    }
+}
+
+Tensor* Tensor_multiply(Tensor* a, Tensor* b, Tensor** output, const unsigned char free){
     if (a == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
@@ -403,6 +457,8 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     tensor->get_grad = tensor_get_grad;   
     tensor->get_node = tensor_get_node;
     tensor->set_node = tensor_set_node;
+    tensor->print_val = tensor_print_val;
+    tensor->print_grad = tensor_print_grad;
 
     return tensor;
 };
