@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include "stdio.h"
 
 // Core data structure for storing value and derivative
 typedef struct {
@@ -15,15 +16,16 @@ typedef struct ADNode {
     ADNode* self;    
     ADNode** parents;
     Dual data;
-    int num_parents;
+    size_t num_parents;
     size_t topology_idx;
     char visited;
     void (*backward)(ADNode* self);
     void (*free)(ADNode* self);
     void (*set_val)(ADNode* self, const double val);
     void (*set_grad)(ADNode* self, const double grad);
-    double (*get_val)(ADNode* self);
-    double (*get_grad)(ADNode* self);
+    void (*set_parent)(ADNode* self, ADNode* parent, const size_t parent_idx);
+    static double (*get_val)(ADNode* self);
+    static double (*get_grad)(ADNode* self);
     ADNode* (*add)(ADNode* self, ADNode* node);
     ADNode* (*multiply)(ADNode* self, ADNode* node);
     ADNode* (*subtract)(ADNode* self, ADNode* node);
@@ -38,19 +40,18 @@ void free_node(ADNode* node){
 };
 
 // Basic backward operations
-static void backward_add(ADNode* node){
+void backward_add(ADNode* node){
     node->parents[0]->data.grad += node->data.grad;
     node->parents[1]->data.grad += node->data.grad;
 };
 
 
-static void backward_multiply(ADNode* node){
+void backward_multiply(ADNode* node){
     node->parents[0]->data.grad += node->data.grad * node->parents[1]->data.value;
     node->parents[1]->data.grad += node->data.grad * node->parents[0]->data.value;
 };
 
-
-static void backward_subtract(ADNode* node){
+void backward_subtract(ADNode* node){
     node->parents[0]->data.grad += node->data.grad;
     node->parents[1]->data.grad -= node->data.grad;  
 };
@@ -59,11 +60,31 @@ static void backward_subtract(ADNode* node){
 // ... (other operations will be added here)
 
 // Function prototypes
-static void node_set_val(ADNode* self, const double val){
+
+void node_set_parent(ADNode* self, ADNode* parent, const size_t parent_idx){
+    if (self == NULL){
+        printf("Node*::self points to null in method node_set_parent.\n");
+        return;
+    }
+
+    if (parent == NULL){
+        printf("Node*::parent points to null in method node_set_parent.\n");
+        return;
+    }
+
+    if (parent_idx >= self->num_parents){
+        printf("provided idx %lu exceeds %lu, the number of parents in node_set_parent.", parent_idx, self->num_parents);
+        return;
+    }
+
+    self->parents[parent_idx] = parent;
+};
+
+void node_set_val(ADNode* self, const double val){
     self->data.value = val;
 };
 
-static void node_set_grad(ADNode* self, const double grad){
+void node_set_grad(ADNode* self, const double grad){
     self->data.grad = grad;
 };
 
@@ -154,6 +175,7 @@ ADNode* node_new(double value, int num_parents) {
     node->free = free_node;
     node->set_val = node_set_val;
     node->set_grad = node_set_grad;
+    node->set_parent = node_set_parent;
     node->get_val = node_get_val;
     node->get_grad = node_get_grad;
     node->add = node_add;

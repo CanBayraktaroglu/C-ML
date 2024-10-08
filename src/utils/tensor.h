@@ -17,14 +17,19 @@ typedef struct Tensor{
     // Methods
         void (*realloc)(Tensor* self, const size_t n_rows, const size_t n_cols);
         void (*destroy)(Tensor* self);
-        static double (*get_val)(Tensor* self, const size_t i, const size_t j);
-        static double (*get_grad)(Tensor* self, const size_t i, const size_t j);
-        static void (*set_val)(Tensor* self, const size_t i, const size_t j, const double val);
-        static void (*set_grad)(Tensor* self, const size_t i, const size_t j, const double grad);
-        static ADNode* (*get_node)(Tensor* self, const size_t i, const size_t j);
-        void (*set_node)(Tensor* self, ADNode* node, const size_t i, const size_t j);
         void (*print_val)(Tensor* self);
         void (*print_grad)(Tensor* self);
+        
+        // Getters
+        static double (*get_val)(Tensor* self, const size_t i, const size_t j);
+        static double (*get_grad)(Tensor* self, const size_t i, const size_t j);
+        static ADNode* (*get_node)(Tensor* self, const size_t i, const size_t j);
+        
+        // Setters
+        void (*set_val)(Tensor* self, const size_t i, const size_t j, const double val);
+        void (*set_grad)(Tensor* self, const size_t i, const size_t j, const double grad);
+        void (*set_node)(Tensor* self, ADNode* node, const size_t i, const size_t j);
+        
 } Tensor;
 
 
@@ -116,7 +121,6 @@ static double tensor_get_grad(Tensor* self, const size_t i, const size_t j){
     return node->get_grad(node);
 
 };
-
 
 void tensor_transpose_inplace(Tensor* self){
     ADNode* temp = (ADNode*)malloc(sizeof(ADNode));
@@ -301,7 +305,7 @@ void tensor_print_grad(Tensor* self){
     }
 }
 
-Tensor* tensor_multiply(Tensor* self, Tensor* tensor){
+Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
@@ -319,15 +323,29 @@ Tensor* tensor_multiply(Tensor* self, Tensor* tensor){
     
     Tensor* result = tensor_new(self->n_rows, tensor->n_cols); 
     
+
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < tensor->n_cols; j++){
+            
+            // declare array dptr to store all the resulting nodes 
+            ADNode* node_arr_dptr[self->n_cols];
             double sum = 0.0;
+
             for (size_t k = 0; k < self->n_cols; k++){
-                sum += self->get_val(self, i, k) * tensor->get_val(tensor, k, j);
+                ADNode* self_node = self->get_node(self, i, k);
+                ADNode* tensor_node = tensor->get_node(tensor, k, j);
+
+                ADNode* result_node = self_node->multiply(self_node, tensor_node);
+                node_arr_dptr[k] = result_node;
+
+                sum += self_node->get_val(self_node) * tensor_node->get_val(tensor_node);
             }
             
-            result->get_node(result, i, j)->
-            Tensor_set(*output, i, j, sum);
+            //
+
+            // set the resulting node
+            
+            
         }
     }
 
