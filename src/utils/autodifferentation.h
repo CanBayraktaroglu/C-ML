@@ -13,22 +13,22 @@ typedef struct {
 
 // Node in the computational graph
 typedef struct ADNode {
-    ADNode* self;    
-    ADNode** parents;
+    struct ADNode* self;    
+    struct ADNode** parents;
     Dual data;
     size_t num_parents;
     size_t topology_idx;
     char visited;
-    void (*backward)(ADNode* self);
-    void (*free)(ADNode* self);
-    void (*set_val)(ADNode* self, const double val);
-    void (*set_grad)(ADNode* self, const double grad);
-    void (*set_parent)(ADNode* self, ADNode* parent, const size_t parent_idx);
-    static double (*get_val)(ADNode* self);
-    static double (*get_grad)(ADNode* self);
-    ADNode* (*add)(ADNode* self, ADNode* node);
-    ADNode* (*multiply)(ADNode* self, ADNode* node);
-    ADNode* (*subtract)(ADNode* self, ADNode* node);
+    void (*backward)(struct ADNode* self);
+    void (*free)(struct ADNode* self);
+    void (*set_val)(struct ADNode* self, const double val);
+    void (*set_grad)(struct ADNode* self, const double grad);
+    void (*set_parent)(struct ADNode* self, struct ADNode* parent, const size_t parent_idx);
+    double (*get_val)(struct ADNode* self);
+    double (*get_grad)(struct ADNode* self);
+    struct ADNode* (*add)(struct ADNode* self, struct ADNode* node);
+    struct ADNode* (*multiply)(struct ADNode* self, struct ADNode* node);
+    struct ADNode* (*subtract)(struct ADNode* self, struct ADNode* node);
 
 }ADNode;
 
@@ -159,7 +159,7 @@ ADNode* node_subtract(ADNode* self, ADNode* node){
 
 };
 
-ADNode* node_new(double value, int num_parents) {
+ADNode* node_new(const double value, const size_t num_parents) {
     ADNode* node = (ADNode*)malloc(sizeof(ADNode));
     node->data.value = value;
     node->data.grad = 0.0;

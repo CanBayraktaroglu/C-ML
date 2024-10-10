@@ -15,23 +15,37 @@ typedef struct Tensor{
         size_t n_cols;
     
     // Methods
-        void (*realloc)(Tensor* self, const size_t n_rows, const size_t n_cols);
-        void (*destroy)(Tensor* self);
-        void (*print_val)(Tensor* self);
-        void (*print_grad)(Tensor* self);
+        void (*realloc)(struct Tensor* self, const size_t n_rows, const size_t n_cols);
+        void (*init)(struct Tensor* self);
+        void (*destroy)(struct Tensor* self);
+        void (*print_val)(struct Tensor* self);
+        void (*print_grad)(struct Tensor* self);
         
         // Getters
-        static double (*get_val)(Tensor* self, const size_t i, const size_t j);
-        static double (*get_grad)(Tensor* self, const size_t i, const size_t j);
-        static ADNode* (*get_node)(Tensor* self, const size_t i, const size_t j);
+        double (*get_val)(struct Tensor* self, const size_t i, const size_t j);
+        double (*get_grad)(struct Tensor* self, const size_t i, const size_t j);
+        ADNode* (*get_node)(struct Tensor* self, const size_t i, const size_t j);
         
         // Setters
-        void (*set_val)(Tensor* self, const size_t i, const size_t j, const double val);
-        void (*set_grad)(Tensor* self, const size_t i, const size_t j, const double grad);
-        void (*set_node)(Tensor* self, ADNode* node, const size_t i, const size_t j);
+        void (*set_val)(struct Tensor* self, const size_t i, const size_t j, const double val);
+        void (*set_grad)(struct Tensor* self, const size_t i, const size_t j, const double grad);
+        void (*set_node)(struct Tensor* self, ADNode* node, const size_t i, const size_t j);
         
 } Tensor;
 
+Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
+    Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
+    if (tensor == NULL){
+        printf("Failed to allocate memory for Tensor.\n");
+        exit(1);
+    }
+    tensor->self = tensor;
+    tensor->nodes = (ADNode**)malloc(n_rows * n_cols * sizeof(ADNode*));
+    tensor->n_rows = n_rows;
+    tensor->n_cols = n_cols;
+
+    return tensor;
+};
 
 void tensor_realloc(Tensor* self, const size_t n_rows, const size_t n_cols){
     self->nodes = (ADNode**) realloc(self->nodes, n_rows * n_cols * sizeof(ADNode*));
@@ -183,12 +197,12 @@ void tensor_scalar_product_inplace(Tensor* self, const double scalar){
 Tensor* tensor_add(Tensor* self, Tensor* tensor){
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
-        return;
+        exit(0);
     }
 
     if (tensor == NULL){
         printf("Tensor b is pointing to an empty address\n.");
-        return;
+        exit(0);
     }
 
     if (self->n_rows != tensor->n_rows || self->n_cols != tensor->n_cols){
@@ -228,12 +242,12 @@ void tensor_add_inplace(Tensor* self, Tensor* tensor){
 Tensor* tensor_subtract(Tensor* self, Tensor* tensor){
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
-        return;
+        exit(0);
     }
 
     if (tensor == NULL){
         printf("Tensor b is pointing to an empty address\n.");
-        return;
+        exit(0);
     }
 
     if (self->n_rows != tensor->n_rows || self->n_cols != tensor->n_cols){
@@ -308,12 +322,12 @@ void tensor_print_grad(Tensor* self){
 Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
-        return;
+        exit(0);
     }
 
     if (tensor == NULL){
         printf("Tensor b is pointing to an empty address\n.");
-        return;
+        exit(0);
     }
 
     if (self->n_cols != tensor->n_rows){
@@ -327,24 +341,23 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < tensor->n_cols; j++){
             
-            // declare array dptr to store all the resulting nodes 
-            ADNode* node_arr_dptr[self->n_cols];
-            double sum = 0.0;
+            ADNode* result_node = node_new(0.0, self->n_cols);
 
             for (size_t k = 0; k < self->n_cols; k++){
                 ADNode* self_node = self->get_node(self, i, k);
                 ADNode* tensor_node = tensor->get_node(tensor, k, j);
 
-                ADNode* result_node = self_node->multiply(self_node, tensor_node);
-                node_arr_dptr[k] = result_node;
-
-                sum += self_node->get_val(self_node) * tensor_node->get_val(tensor_node);
+                ADNode* product_node = self_node->multiply(self_node, tensor_node);
+                result_node->set_parent(result_node, product_node, k);
+                
+                result_node->data.value += product_node->get_val(result_node);
             }
-            
-            //
+
+            // Set backward
+            result_node->backward = backward_add;
 
             // set the resulting node
-            
+            result->set_node(result, result_node, i, j);         
             
         }
     }
@@ -352,7 +365,7 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
 };
 
 
-void tensor_multiply_inplace(Tensor* self, Tensor* tensor){
+void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
@@ -367,52 +380,66 @@ void tensor_multiply_inplace(Tensor* self, Tensor* tensor){
         printf("Tensor dimensions do not match for multiplication.\n");
         exit(0);
     }
-    
-    // reallocate memory for output
-    if (*output == NULL){
-        Tensor_create(output, a->n_rows, b->n_cols);
+
+    // reallocate_memory
+    if (self->n_cols != tensor->n_cols){
+        self->realloc(self, self->n_rows, tensor->n_cols);
     }
-    else {
-        Tensor_realloc(*output, a->n_rows, b->n_cols);    
-    } 
     
-    for (size_t i = 0; i < a->n_rows; i++){
-        for (size_t j = 0; j < b->n_cols; j++){
-            double sum = 0.0;
-            for (size_t k = 0; k < a->n_cols; k++){
-                sum += Tensor_get(a, i, k) * Tensor_get(b, k, j);
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < tensor->n_cols; j++){
+            ADNode* result_node = node_new(0.0, self->n_cols);
+
+            for (size_t k = 0; k < self->n_cols; k++){
+                ADNode* self_node = self->get_node(self, i, k);
+                ADNode* tensor_node = tensor->get_node(tensor, k, j);
+
+                ADNode* product_node = self_node->multiply(self_node, tensor_node);
+                result_node->set_parent(result_node, product_node, k);
+                
+                result_node->data.value += product_node->get_val(result_node);
             }
-            Tensor_set(*output, i, j, sum);
+
+            // Set backward
+            result_node->backward = backward_add;
+
+            // set the resulting node
+            self->set_node(self, result_node, i, j); 
         }
     }
 
-    if (free){ Tensor_destroy(a); Tensor_destroy(b);}
 };
 
-void Tensor_abs(Tensor* X){
+
+Tensor* tensor_copy(Tensor* self){
+
+    Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
+    if (tensor == NULL){
+        printf("Failed to allocate memory for Tensor.\n");
+        exit(1);
+    }
+    
+    memcpy(tensor, self, sizeof(Tensor));
+    return tensor;
+};
+
+/* void Tensor_abs(Tensor* X){
     for (size_t i = 0; i < X->n_rows; i++){
         for (size_t j = 0; j < X->n_cols; j++){
             Tensor_set(X, i, j, abs(Tensor_get(X, i, j)));
         }
     }
-};
-
-Tensor* create_identity_Tensor(const size_t n){
+}; */
+/* Tensor* create_identity_Tensor(const size_t n){
     Tensor* mat = NULL;
     Tensor_create(&mat, n, n);
     for (size_t i = 0; i < n; i++){
         Tensor_set(mat, i, i, 1);
     }
     return mat;
-};
-Tensor* Tensor_copy(Tensor* mat){
-    Tensor* copy = NULL;
-    Tensor_create(&copy, mat->n_rows, mat->n_cols);
-    memcpy(copy->data, mat->data, mat->n_rows * mat->n_cols * sizeof(double));
-    return copy;
-};
+}; */
 
-double Tensor_froebenius_norm(Tensor* mat){
+/* double Tensor_froebenius_norm(Tensor* mat){
     double sum = 0.0;
     for (size_t i = 0; i < mat->n_rows; i++){
         for (size_t j = 0; j < mat->n_cols; j++){
@@ -420,58 +447,17 @@ double Tensor_froebenius_norm(Tensor* mat){
         }
     }
     return sqrt(sum);
-};
+}; */
 
-void Tensor_sqrt(Tensor* X){
+/* void Tensor_sqrt(Tensor* X){
     for (size_t i = 0; i < X->n_rows; i++){
         for (size_t j = 0; j < X->n_cols; j++){
             Tensor_set(X, i, j, sqrt(Tensor_get(X, i, j)));
         }
     }
-};
+}; */
 
-/* double calculate_inverse_tolerance(Tensor* A_T, Tensor* x){
-    Tensor* prod = Tensor_multiply(A_T, x, 0);
-    Tensor_print(x);
-    Tensor* identity = create_identity_Tensor(A_T->n_rows);
-    Tensor* diff = Tensor_subtract(prod, identity, 1);
-    double tol = Tensor_froebenius_norm(diff);
-    Tensor_destroy(&diff);
-    return tol;
-} */
-
-/* Tensor* Tensor_inverse_newton(Tensor* mat, size_t max_iter, double tol, unsigned char free){
-    Tensor* X = Tensor_create(mat->n_rows, mat->n_cols);
-
-    // Initialize x_prev with 1.0s
-    printf("Initializing Tensor with 1.0s.\n");
-    for (size_t i = 0; i < X->n_rows; i++){
-        for (size_t j = 0; j < X->n_cols; j++){
-            Tensor_set(X, i, j, 1.0f);
-        }
-    }
- 
-    size_t iter = 0;
-    Tensor* X_T = Tensor_transpose(mat);
-    Tensor* scaled_identity = scalar_product(create_identity_Tensor(mat->n_cols), 2.0f, 1);
-    printf("INITIAL X_T_n_cols: %lu, X_n_rows: %lu\n", X_T->n_cols, X->n_rows);
-    while (iter <= max_iter && calculate_inverse_tolerance(X_T, X) > tol){
-        printf("Loop %lu.\n", iter);
-        printf("X_T_n_cols: %lu, X_n_rows: %lu\n", X_T->n_cols, X->n_rows);
-
-        X = Tensor_multiply(X, Tensor_subtract(scaled_identity, Tensor_multiply(X_T, X, 0), 0), 0);
-        iter++;
-    }
-
-    Tensor_destroy(&scaled_identity);
-    Tensor_destroy(&X_T);
-    if (free) Tensor_destroy(&mat);
-
-    return X;
-};
- */
-
-Tensor* Tensor_create_from_array(const size_t n_rows, const size_t n_cols, const double (*arr)[n_cols]){
+/* Tensor* Tensor_create_from_array(const size_t n_rows, const size_t n_cols, const double (*arr)[n_cols]){
     if (arr == NULL){
         printf("Array to be converted to Tensor points to an empty address.\n");
         exit(0);
@@ -487,31 +473,21 @@ Tensor* Tensor_create_from_array(const size_t n_rows, const size_t n_cols, const
 
 
     return mat;
-};
-Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
-    Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
-    if (tensor == NULL){
-        printf("Failed to allocate memory for Tensor.\n");
-        exit(1);
-    }
-    tensor->self = tensor;
-    tensor->nodes = (ADNode**)malloc(n_rows * n_cols * sizeof(ADNode*));
-    tensor->n_rows = n_rows;
-    tensor->n_cols = n_cols;
+}; */
 
+
+void tensor_init(Tensor* self){
     // Set methods
-    tensor->realloc = tensor_realloc;
-    tensor->destroy = tensor_destroy;
-    tensor->set_val = tensor_set_val;
-    tensor->set_grad = tensor_set_grad;
-    tensor->get_val = tensor_get_val;
-    tensor->get_grad = tensor_get_grad;   
-    tensor->get_node = tensor_get_node;
-    tensor->set_node = tensor_set_node;
-    tensor->print_val = tensor_print_val;
-    tensor->print_grad = tensor_print_grad;
-
-    return tensor;
+    self->realloc = tensor_realloc;
+    self->destroy = tensor_destroy;
+    self->set_val = tensor_set_val;
+    self->set_grad = tensor_set_grad;
+    self->get_val = tensor_get_val;
+    self->get_grad = tensor_get_grad;   
+    self->get_node = tensor_get_node;
+    self->set_node = tensor_set_node;
+    self->print_val = tensor_print_val;
+    self->print_grad = tensor_print_grad;
+    self->init = tensor_init;
 };
-
 #endif // __TENSOR_H__

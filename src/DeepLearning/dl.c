@@ -3,6 +3,8 @@
 #include "optimizer.h"
 #include "matrix.h"
 #include "loss.h"
+#include "autodifferentation.h"
+#include "tensor.h"
 
 void main(void){
 
