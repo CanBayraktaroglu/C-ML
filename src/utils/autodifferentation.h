@@ -19,43 +19,95 @@ typedef struct ADNode {
     size_t num_parents;
     size_t topology_idx;
     char visited;
-    void (*backward)(struct ADNode* self);
-    void (*free)(struct ADNode* self);
-    void (*set_val)(struct ADNode* self, const double val);
-    void (*set_grad)(struct ADNode* self, const double grad);
-    void (*set_parent)(struct ADNode* self, struct ADNode* parent, const size_t parent_idx);
-    double (*get_val)(struct ADNode* self);
-    double (*get_grad)(struct ADNode* self);
-    struct ADNode* (*add)(struct ADNode* self, struct ADNode* node);
-    struct ADNode* (*multiply)(struct ADNode* self, struct ADNode* node);
-    struct ADNode* (*subtract)(struct ADNode* self, struct ADNode* node);
+
+    // Methods
+        void (*backward)(struct ADNode* self);
+        void (*destroy)(struct ADNode* self);
+        void (*set_val)(struct ADNode* self, const double val);
+        void (*set_grad)(struct ADNode* self, const double grad);
+        void (*set_parent)(struct ADNode* self, struct ADNode* parent, const size_t parent_idx);
+        void (*init)(struct ADNode* self);
+    
+        double (*get_val)(struct ADNode* self);
+        double (*get_grad)(struct ADNode* self);
+        
+        struct ADNode* (*add)(struct ADNode* self, struct ADNode* node);
+        struct ADNode* (*multiply)(struct ADNode* self, struct ADNode* node);
+        struct ADNode* (*subtract)(struct ADNode* self, struct ADNode* node);
+        struct ADNode* (*sqrt)(struct ADNode* self);
+        struct ADNode* (*exp)(struct ADNode* self);
+        struct ADNode* (*log)(struct ADNode* self);
 
 }ADNode;
 
-void free_node(ADNode* node){
-    if (node){
-        free(node->parents);
-        free(node);
+void node_init(ADNode* self);
+
+ADNode* node_new(const double value, const size_t num_parents) {
+    ADNode* node = (ADNode*)malloc(sizeof(ADNode));
+    node->data.value = value;
+    node->data.grad = 0.0;
+    node->num_parents = num_parents;
+    if (num_parents > 0) {
+        node->parents = (ADNode**)malloc(num_parents * sizeof(ADNode*));
+    } else {
+        node->parents = NULL;
+    }
+    
+    //Set Methods
+    node->backward = NULL;
+    node->init = node_init;
+
+    node->init(node);
+
+    return node;
+}
+
+void node_destroy(ADNode* self){
+    if (self){
+        printf("Freeing node.\n");
+        if (self->parents){
+            free(self->parents);
+            self->parents = NULL;
+        }
+        free(self);
+        self = NULL;
     }
 };
 
 // Basic backward operations
 void backward_add(ADNode* node){
-    node->parents[0]->data.grad += node->data.grad;
-    node->parents[1]->data.grad += node->data.grad;
+    for (size_t i = 0; i < node->num_parents; i++){
+        node->parents[i]->data.grad += node->data.grad;
+    }
 };
 
+void backward_sqrt(ADNode* node){
+    double da_dzi = 0.5 * (1.0 / sqrt(node->get_grad(node)));
+    node->parents[0]->data.grad += node->get_grad(node) * da_dzi; 
+};
 
 void backward_multiply(ADNode* node){
-    node->parents[0]->data.grad += node->data.grad * node->parents[1]->data.value;
-    node->parents[1]->data.grad += node->data.grad * node->parents[0]->data.value;
+    for (size_t i = 0; i < node->num_parents; i++){
+        const double da_dzi = node->get_val(node) / node->parents[i]->data.value; 
+        node->parents[i]->data.grad += node->get_grad(node) * da_dzi;
+    }
+
+};
+
+void backward_exp(ADNode* node){
+    double da_dzi = exp(node->get_val(node));
+    node->parents[0]->data.grad += da_dzi;
+};
+
+void backward_log(ADNode* node){
+    double da_dzi = 1.0 / node->get_val(node);
+    node->parents[0]->data.grad += node->get_grad(node) * da_dzi;
 };
 
 void backward_subtract(ADNode* node){
-    node->parents[0]->data.grad += node->data.grad;
-    node->parents[1]->data.grad -= node->data.grad;  
+    node->parents[0]->data.grad += node->get_grad(node);
+    node->parents[1]->data.grad -= node->get_grad(node);  
 };
-
 
 // ... (other operations will be added here)
 
@@ -97,19 +149,7 @@ static double node_get_grad(ADNode* self){
 }
 
 ADNode* node_add(ADNode* self, ADNode* node){
-    ADNode* result = (ADNode*)malloc(sizeof(ADNode));
-    result->data.grad = 0.0;
-    result->num_parents = 2;
-    result->parents = (ADNode**)malloc(2 * sizeof(ADNode*));
-    
-    //Set Methods
-    result->backward = NULL;
-    result->free = free_node;
-    result->set_val = node_set_val;
-    result->set_grad = node_set_grad;
-    result->get_val = node_get_val;
-    result->get_grad = node_get_grad;
-    result->data.value = self->get_val(self) + node->get_val(node);
+    ADNode* result = node_new(self->get_val(self) + node->get_val(node), 2);
 
     result->parents[0] = self;
     result->parents[1] = node;
@@ -118,169 +158,58 @@ ADNode* node_add(ADNode* self, ADNode* node){
 };
 
 ADNode* node_multiply(ADNode* self, ADNode* node){
-    ADNode* result = (ADNode*)malloc(sizeof(ADNode));
-    result->data.grad = 0.0;
-    result->num_parents = 2;
-    result->parents = (ADNode**)malloc(2 * sizeof(ADNode*));
-    
-    //Set Methods
-    result->backward = NULL;
-    result->free = free_node;
-    result->set_val = node_set_val;
-    result->set_grad = node_set_grad;
-    result->get_val = node_get_val;
-    result->get_grad = node_get_grad;
-    result->data.value = self->get_val(self) * node->get_val(node);
+    ADNode* result = node_new(self->get_val(self) * node->get_val(node), 2);
 
     result->parents[0] = self;
     result->parents[1] = node;
     result->backward = backward_multiply;
     return result;
 };
+
+ADNode* node_sqrt(ADNode* self){
+    ADNode* result = node_new(sqrt(self->get_val(self)), 1); 
+    result->parents[0] = self;
+    result->backward = backward_sqrt;
+};
+
+ADNode* node_exp(ADNode* self){
+    ADNode* result = node_new(exp(self->get_val(self)), 1); 
+    result->parents[0] = self;
+    result->backward = backward_exp;
+};
+
+ADNode* node_log(ADNode* self){
+    ADNode* result = node_new(log(self->get_val(self)), 1); 
+    result->parents[0] = self;
+    result->backward = backward_log;
+};
+
 ADNode* node_subtract(ADNode* self, ADNode* node){
-    ADNode* result = (ADNode*)malloc(sizeof(ADNode));
-    result->data.grad = 0.0;
-    result->num_parents = 2;
-    result->parents = (ADNode**)malloc(2 * sizeof(ADNode*));
-    
-    //Set Methods
-    result->backward = NULL;
-    result->free = free_node;
-    result->set_val = node_set_val;
-    result->set_grad = node_set_grad;
-    result->get_val = node_get_val;
-    result->get_grad = node_get_grad;
-    result->data.value = self->get_val(self) - node->get_val(node);
+    ADNode* result = node_new(self->get_val(self) - node->get_val(node), 2);
 
     result->parents[0] = self;
     result->parents[1] = node;
     result->backward = backward_subtract;
     return result;
-
 };
 
-ADNode* node_new(const double value, const size_t num_parents) {
-    ADNode* node = (ADNode*)malloc(sizeof(ADNode));
-    node->data.value = value;
-    node->data.grad = 0.0;
-    node->num_parents = num_parents;
-    if (num_parents > 0) {
-        node->parents = (ADNode**)malloc(num_parents * sizeof(ADNode*));
-    } else {
-        node->parents = NULL;
-    }
-    
-    //Set Methods
-    node->backward = NULL;
-    node->free = free_node;
-    node->set_val = node_set_val;
-    node->set_grad = node_set_grad;
-    node->set_parent = node_set_parent;
-    node->get_val = node_get_val;
-    node->get_grad = node_get_grad;
-    node->add = node_add;
-    node->multiply = node_multiply;
-    node->subtract = node->subtract;
-
-    return node;
-}
+void node_init(ADNode* self){
+    self->destroy = node_destroy;
+    self->set_val = node_set_val;
+    self->set_grad = node_set_grad;
+    self->set_parent = node_set_parent;
+    self->get_val = node_get_val;
+    self->get_grad = node_get_grad;
+    self->add = node_add;
+    self->multiply = node_multiply;
+    self->subtract = node_subtract;
+    self->sqrt = node_sqrt;
+    self->exp = node_exp;
+    self->log = node_log;
+};
 
 #pragma region Computation Graph
 
-// ADNODE GRAPH IMPLEMENTATION
-// Graph Structure
-typedef struct ComputeGraph{
-    struct ComputeGraph* self;
-    ADNode** nodes;
-    size_t num_nodes;
-    size_t capacity;
-    void (*add_node)(struct ComputeGraph* self, ADNode* node);
-    void (*free)(struct ComputeGraph* self);
-    void (*sort)(struct ComputeGraph* self);
-    void (*backward)(struct ComputeGraph* self);
-}ComputeGraph;  
 
-
-// Graph Operations
-void add_node_to_graph(ComputeGraph* self, ADNode* node){
-    if (self->num_nodes == self->capacity){
-        self->capacity *= 2;
-        self->nodes = (ADNode**)realloc(self->nodes, self->capacity * sizeof(ADNode*));
-    }
-    self->nodes[self->num_nodes++] = node;
-};
-
-void free_graph(ComputeGraph* self){
-    if (self){
-        for (size_t i=0; i < self->num_nodes; i++){
-            ADNode* node = self->nodes[i];
-            node->free(node);
-
-        }
-        
-        free(self->nodes);
-        free(self);
-    }
-};
-
-static void dfs(ADNode* node, ADNode** sorted, size_t* idx){
-    if (node->visited) return;
-    node->visited = 1;
-
-    for (size_t i = 0; i < node->num_parents; i++){
-        dfs(node->parents[i], sorted, idx);
-    }
-
-    node->topology_idx = (*idx)--; // going backward means indices of nodes are lower
-    sorted[node->topology_idx] = node;
-};
-
-void topological_sort(ComputeGraph* graph){
-    ADNode** sorted = (ADNode**)malloc(graph->num_nodes * sizeof(ADNode*));
-    size_t idx = graph->num_nodes - 1;
-
-    // Set all nodes as unvisited
-    for (size_t i = 0; i < graph->num_nodes; i++){
-        graph->nodes[i]->visited = 0;
-    }
-
-    // Traverse and add nodes to corresponding places in sorted array
-    for (size_t i = 0; graph->num_nodes; i++){
-        if (!graph->nodes[i]->visited) dfs(graph->nodes[i], sorted, &idx);
-    }
-
-    // Replace the original array with the sorted one
-    free(graph->nodes);
-    graph->nodes = sorted;
-};
-
-void backward_pass(ComputeGraph* self){
-    //perform topological sort
-    topological_sort(self);
-
-    // Set gradient of the output Node to 1
-    self->nodes[self->num_nodes - 1]->data.grad = 1.0;
-
-    // Perform backward pass
-    for (size_t i = self->num_nodes - 1; i >= 0; i--){
-        ADNode* node = self->nodes[i];
-        if (node->backward) node->backward(node);
-    }
-};
-
-ComputeGraph* graph_new(){
-    ComputeGraph* graph = (ComputeGraph*)malloc(sizeof(ComputeGraph));
-    graph->capacity = 10; // start with space for 10 Nodes
-    graph->nodes = (ADNode**)malloc(graph->capacity * sizeof(ComputeGraph*));
-    graph->num_nodes = 0;
-
-    // Set methods
-    graph->add_node = add_node_to_graph;
-    graph->free = free_graph;
-    graph->sort = topological_sort;
-    graph->backward = backward_pass;
-    return graph; 
-};
-#pragma endregion Computation Graph
 
 #endif // AUTODIFF_H

@@ -1,21 +1,37 @@
-#include "utils.h"
-#include "matrix.h"
+#include "compute_graph.h"
+#include "tensor.h"
 
 void main(void){
-    Matrix* X = matrix_create(3, 3);
-    matrix_set(X, 0, 0, 1);
-    matrix_set(X, 0, 1, 2);
-    matrix_set(X, 0, 2, 3);
+    ComputeGraph* graph = graph_new();
 
-    matrix_set(X, 1, 0, 4);
-    matrix_set(X, 1, 1, 5);
-    matrix_set(X, 1, 2, 6);
+    double arr_1[1][1] = {{10.0}};
 
-    matrix_set(X, 2, 0, 7);
-    matrix_set(X, 2, 1, 8);
-    matrix_set(X, 2, 2, 9);
-    matrix_print(X);
-    printf("----------------\n");
+    Tensor* A = tensor_create_from_array(1, 1, arr_1);
+    A->print_val(A);
 
-    matrix_destroy(&X);
+    double arr_2[4][1] = {
+        {1.0},
+        {2.5},
+        {6.0},
+        {4.0},
+    };
+
+    Tensor* B = tensor_create_from_array(4, 1, arr_2);
+
+    Tensor* C = B->dot_product(B, A);
+
+    C->print_val(C);
+
+    // TODO BUILD GRAPH
+
+    printf("Destroying graph.\n"); 
+    graph->free(graph);
+
+    printf("Destroying tensors.\n");
+    A->destroy(A);
+    printf("A destroyed.\n");
+    B->destroy(B);
+    printf("B destroyed.\n");
+    C->destroy(C);
+    printf("C destroyed.\n");
 };

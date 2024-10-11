@@ -6,6 +6,7 @@
 #include "point.h"
 #include "autodifferentation.h"
 
+
 typedef struct Tensor{
     
     // Attributes
@@ -20,7 +21,30 @@ typedef struct Tensor{
         void (*destroy)(struct Tensor* self);
         void (*print_val)(struct Tensor* self);
         void (*print_grad)(struct Tensor* self);
-        
+
+        void (*transpose_inplace)(struct Tensor* self); 
+        void (*abs_inplace)(struct Tensor* self);
+        void (*add_inplace)(struct Tensor* self, struct Tensor* tensor);
+        void (*subtract_inplace)(struct Tensor* self, struct Tensor* tensor);
+        void (*dot_product_inplace)(struct Tensor* self, struct Tensor* tensor);
+        void (*scalar_product_inplace)(struct Tensor* self, const double scalar);
+        void (*sqrt_inplace)(struct Tensor* self);
+        void (*exp_inplace)(struct Tensor* self);
+        void (*log_inplace)(struct Tensor* self);
+
+        struct Tensor* (*transpose)(struct Tensor* self); 
+        struct Tensor* (*copy)(struct Tensor* self);
+        struct Tensor* (*abs)(struct Tensor* self);
+        struct Tensor* (*add)(struct Tensor* self, struct Tensor* tensor);
+        struct Tensor* (*subtract)(struct Tensor* self, struct Tensor* tensor);
+        struct Tensor* (*dot_product)(struct Tensor* self, struct Tensor* tensor);
+        struct Tensor* (*scalar_product)(struct Tensor* self, const double scalar);
+        struct Tensor* (*sqrt)(struct Tensor* self);
+        struct Tensor* (*exp)(struct Tensor* self);
+        struct Tensor* (*log)(struct Tensor* self);
+
+        double (*froebenius_norm)(struct Tensor* self);
+
         // Getters
         double (*get_val)(struct Tensor* self, const size_t i, const size_t j);
         double (*get_grad)(struct Tensor* self, const size_t i, const size_t j);
@@ -33,6 +57,8 @@ typedef struct Tensor{
         
 } Tensor;
 
+void tensor_init(Tensor* self);
+
 Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
     if (tensor == NULL){
@@ -43,6 +69,9 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     tensor->nodes = (ADNode**)malloc(n_rows * n_cols * sizeof(ADNode*));
     tensor->n_rows = n_rows;
     tensor->n_cols = n_cols;
+    tensor->init = tensor_init;
+
+    tensor->init(tensor);
 
     return tensor;
 };
@@ -62,17 +91,19 @@ void tensor_set_node(Tensor* self, ADNode* node, const size_t i, const size_t j)
 };
 
 void tensor_destroy(Tensor* self){
-    if (self == NULL) return;
+    if (self){
+        for (size_t i = 0; i < self->n_rows; i++){
+            for (size_t j = 0; j < self->n_cols; j++){
+                printf("Freeing node at (%lu, %lu)\n", i, j);
+                ADNode* node = self->get_node(self, i, j);
+                node->destroy(node);
 
-    for (size_t i = 0; i < self->n_rows; i++){
-        for (size_t j = 0; j < self->n_cols; j++){
-            ADNode* node = self->get_node(self, i, j);
-            node->free(node);
-
+            }
         }
+        free(self->nodes);
+        free(self);
     }
-    free(self->nodes);
-    free(self);
+
 };
 
 void tensor_set_val(Tensor* self, const size_t i, const size_t j, const double val){
@@ -150,7 +181,7 @@ void tensor_transpose_inplace(Tensor* self){
         }
     }
     
-    temp->free(temp);        
+    temp->destroy(temp);        
 };
 
 Tensor* tensor_transpose(Tensor* self){
@@ -337,21 +368,20 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
     
     Tensor* result = tensor_new(self->n_rows, tensor->n_cols); 
     
-
-    for (size_t i = 0; i < self->n_rows; i++){
-        for (size_t j = 0; j < tensor->n_cols; j++){
+    for (size_t i = 0; i < result->n_rows; i++){
+        for (size_t j = 0; j < result->n_cols; j++){
             
             ADNode* result_node = node_new(0.0, self->n_cols);
 
             for (size_t k = 0; k < self->n_cols; k++){
                 ADNode* self_node = self->get_node(self, i, k);
                 ADNode* tensor_node = tensor->get_node(tensor, k, j);
-
                 ADNode* product_node = self_node->multiply(self_node, tensor_node);
+
                 result_node->set_parent(result_node, product_node, k);
-                
-                result_node->data.value += product_node->get_val(result_node);
+                result_node->data.value += product_node->get_val(product_node);
             }
+
 
             // Set backward
             result_node->backward = backward_add;
@@ -361,9 +391,8 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
             
         }
     }
-
+    return result;  
 };
-
 
 void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
     if (self == NULL){
@@ -410,7 +439,6 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
 
 };
 
-
 Tensor* tensor_copy(Tensor* self){
 
     Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
@@ -423,63 +451,152 @@ Tensor* tensor_copy(Tensor* self){
     return tensor;
 };
 
-/* void Tensor_abs(Tensor* X){
-    for (size_t i = 0; i < X->n_rows; i++){
-        for (size_t j = 0; j < X->n_cols; j++){
-            Tensor_set(X, i, j, abs(Tensor_get(X, i, j)));
+void tensor_abs_inplace(Tensor* self){
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            if (node->get_val(node) < 0){
+                ADNode* constant_node = node_new(-1.0, 0);
+                ADNode* result_node = node->multiply(node, constant_node);
+                self->set_node(self, result_node, i, j);
+            }
         }
     }
-}; */
-/* Tensor* create_identity_Tensor(const size_t n){
-    Tensor* mat = NULL;
-    Tensor_create(&mat, n, n);
-    for (size_t i = 0; i < n; i++){
-        Tensor_set(mat, i, i, 1);
-    }
-    return mat;
-}; */
+}; 
 
-/* double Tensor_froebenius_norm(Tensor* mat){
+Tensor* tensor_abs(Tensor* self){
+    Tensor* tensor = self->copy(self);
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            if (node->get_val(node) < 0){
+                ADNode* constant_node = node_new(-1.0, 0);
+                ADNode* result_node = node->multiply(node, constant_node);
+                tensor->set_node(tensor, result_node, i, j);
+            }
+        }
+    }
+
+    return tensor;
+};
+
+Tensor* tensor_create_identity(const size_t n){
+    Tensor* identity = tensor_new(n, n);
+
+    for (size_t i = 0; i < n; i++){
+        ADNode* node = node_new(1.0, 0);
+        identity->set_node(identity, node, i, i); 
+    }
+
+    return identity;
+}; 
+
+double tensor_froebenius_norm(Tensor* self){
+    // euclidian norm of the vector, which is the matrix flattened out
     double sum = 0.0;
-    for (size_t i = 0; i < mat->n_rows; i++){
-        for (size_t j = 0; j < mat->n_cols; j++){
-            sum += Tensor_get(mat, i, j) * Tensor_get(mat, i, j);
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            sum += self->get_val(self, i, j) * self->get_val(self, i, j);
         }
     }
     return sqrt(sum);
-}; */
+}; 
 
-/* void Tensor_sqrt(Tensor* X){
-    for (size_t i = 0; i < X->n_rows; i++){
-        for (size_t j = 0; j < X->n_cols; j++){
-            Tensor_set(X, i, j, sqrt(Tensor_get(X, i, j)));
+Tensor* tensor_sqrt(Tensor* self){
+    Tensor* tensor = tensor_new(self->n_rows, self->n_cols);
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->sqrt(node);
+            tensor->set_node(tensor, result_node, i, j);
         }
     }
-}; */
 
-/* Tensor* Tensor_create_from_array(const size_t n_rows, const size_t n_cols, const double (*arr)[n_cols]){
+    return tensor;
+};
+
+void tensor_sqrt_inplace(Tensor* self){
+    
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->sqrt(node);
+            self->set_node(self, result_node, i, j);
+        }
+    }
+
+};
+
+void tensor_exp_inplace(Tensor* self){
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->exp(node);
+            self->set_node(self, result_node, i, j);
+        }
+    }
+};
+
+Tensor* tensor_exp(Tensor* self){
+    Tensor* tensor = tensor_new(self->n_rows, self->n_cols);
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->exp(node);
+            tensor->set_node(tensor, result_node, i, j);
+        }
+    }
+
+    return tensor;
+};
+
+void tensor_log_inplace(Tensor* self){
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->log(node);
+            self->set_node(self, result_node, i, j);
+        }
+    }
+};
+
+Tensor* tensor_log(Tensor* self){
+    Tensor* tensor = tensor_new(self->n_rows, self->n_cols);
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->log(node);
+            tensor->set_node(tensor, result_node, i, j);
+        }
+    }
+
+    return tensor;
+};
+
+Tensor* tensor_create_from_array(const size_t n_rows, const size_t n_cols, const double (*arr)[n_cols]){
     if (arr == NULL){
         printf("Array to be converted to Tensor points to an empty address.\n");
         exit(0);
     }
-    Tensor* mat = NULL;
-    Tensor_create(&mat, n_rows, n_cols);
+
+    Tensor* tensor = tensor_new(n_rows, n_cols);
     for (size_t i = 0; i < n_rows; i++){
-        for (size_t j = 0; j < n_cols; j++){
-            Tensor_set(mat, i, j, arr[i][j]);
+        for (size_t j = 0; j < n_cols; j++){ 
+            ADNode* node = node_new(arr[i][j], 0);
+            tensor->set_node(tensor, node, i, j);
         }
     }
-
-
-
-    return mat;
-}; */
+    return tensor;
+}; 
 
 
 void tensor_init(Tensor* self){
     // Set methods
-    self->realloc = tensor_realloc;
-    self->destroy = tensor_destroy;
+    
     self->set_val = tensor_set_val;
     self->set_grad = tensor_set_grad;
     self->get_val = tensor_get_val;
@@ -488,6 +605,31 @@ void tensor_init(Tensor* self){
     self->set_node = tensor_set_node;
     self->print_val = tensor_print_val;
     self->print_grad = tensor_print_grad;
-    self->init = tensor_init;
+    
+    self->realloc = tensor_realloc;
+    self->destroy = tensor_destroy;
+    
+    self->add_inplace = tensor_add_inplace;
+    self->abs_inplace = tensor_abs_inplace;
+    self->subtract_inplace = tensor_subtract_inplace;
+    self->transpose_inplace = tensor_transpose_inplace;
+    self->dot_product_inplace = tensor_dot_product_inplace;
+    self->scalar_product_inplace = tensor_scalar_product_inplace;
+    self->sqrt_inplace = tensor_sqrt_inplace;
+    self->exp_inplace = tensor_exp_inplace;
+    self->log_inplace = tensor_log_inplace;
+
+    self->add = tensor_add;
+    self->abs = tensor_abs;
+    self->subtract = tensor_subtract;
+    self->transpose = tensor_transpose;
+    self->dot_product = tensor_dot_product;
+    self->scalar_product = tensor_scalar_product;
+
+    self->froebenius_norm = tensor_froebenius_norm;
+    self->sqrt = tensor_sqrt;
+    self->exp = tensor_exp;
+    self->log = tensor_log;
+
 };
 #endif // __TENSOR_H__
