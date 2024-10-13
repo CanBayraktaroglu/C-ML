@@ -61,6 +61,7 @@ ADNode* node_new(const double value, const size_t num_parents, char is_trainable
     //Set Methods
     node->is_trainable = is_trainable;
     node->backward = NULL;
+    node->visited = 0;
     node->init = node_init;
     node->init(node);
 
@@ -80,9 +81,6 @@ ADNode* node_copy(ADNode* self){
 
 void node_destroy(ADNode* self){
     if (self){
-        if (self->topology_idx){
-            printf("Freeing node with topology index %lu.\n", self->topology_idx);
-        }
         if (self->parents){
             free(self->parents);
             self->parents = NULL;

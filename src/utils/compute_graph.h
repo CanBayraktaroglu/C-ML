@@ -15,11 +15,12 @@ typedef struct ComputeGraph{
     Adam_Optimizer* optimizer;
 
     void (*add_node)(struct ComputeGraph* self, ADNode* node);
-    void (*free)(struct ComputeGraph* self);
+    void (*destroy)(struct ComputeGraph* self);
     void (*sort)(struct ComputeGraph* self);
     void (*propagate_back)(struct ComputeGraph* self);
     void (*prune)(struct ComputeGraph* self);
     void (*optimize)(struct ComputeGraph* self);
+    void (*build)(struct ComputeGraph* self, ADNode* output);
 
 }ComputeGraph;  
 
@@ -47,7 +48,7 @@ void graph_prune(ComputeGraph* self){
     }
 };
 
-void graph_free(ComputeGraph* self){
+void graph_destroy(ComputeGraph* self){
     if (self){
         for (size_t i=0; i < self->num_nodes; i++){
             ADNode* node = self->nodes[i];
@@ -73,6 +74,7 @@ void dfs_sort(ADNode* node, ADNode** sorted, size_t* idx){
 };
 
 void dfs_explore(ComputeGraph* graph, ADNode* node){
+    if (graph == NULL) return;
     if (node == NULL || node->visited) return;
     node->visited = 1;
     graph->add_node(graph, node);
@@ -159,10 +161,11 @@ ComputeGraph* graph_new(){
 
     // Set methods
     graph->add_node = add_node_to_graph;
-    graph->free = graph_free;
+    graph->destroy = graph_destroy;
     graph->sort = graph_topological_sort;
     graph->propagate_back = graph_propagate_back;
     graph->prune = graph_prune;
+    graph->build = graph_build;
     graph->optimize = graph_optimize;
 
     return graph; 

@@ -19,6 +19,7 @@ typedef struct Tensor{
         void (*realloc)(struct Tensor* self, const size_t n_rows, const size_t n_cols);
         void (*init)(struct Tensor* self);
         void (*destroy)(struct Tensor* self);
+        void (*free)(struct Tensor* self);
         void (*print_val)(struct Tensor* self);
         void (*print_grad)(struct Tensor* self);
 
@@ -94,7 +95,6 @@ void tensor_destroy(Tensor* self){
     if (self){
         for (size_t i = 0; i < self->n_rows; i++){
             for (size_t j = 0; j < self->n_cols; j++){
-                printf("Freeing node at (%lu, %lu)\n", i, j);
                 ADNode* node = self->get_node(self, i, j);
                 node->destroy(node);
 
@@ -104,6 +104,13 @@ void tensor_destroy(Tensor* self){
         free(self);
     }
 
+};
+
+void tensor_free(Tensor* self){
+    if (self){
+        free(self->nodes);
+        free(self);
+    }
 };
 
 void tensor_set_val(Tensor* self, const size_t i, const size_t j, const double val){
@@ -189,9 +196,8 @@ Tensor* tensor_transpose(Tensor* self){
 
     for(size_t i = 0; i < self->n_rows; i++){
         for(size_t j = 0; j < self->n_cols; j++){
-            ADNode* source = self->nodes[i * self->n_cols + j]; // iter cols
-            ADNode* target = temp->nodes[j * self->n_rows + i];
-            memcpy(target, source, sizeof(ADNode));
+            ADNode* source = self->get_node(self, i, j); // iter cols
+            temp->set_node(temp, source, j,i);
         }
     }
 
@@ -607,6 +613,7 @@ void tensor_init(Tensor* self){
     self->print_grad = tensor_print_grad;
     
     self->realloc = tensor_realloc;
+    self->free = tensor_free;
     self->destroy = tensor_destroy;
     
     self->add_inplace = tensor_add_inplace;
