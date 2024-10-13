@@ -82,6 +82,7 @@ ADNode* node_copy(ADNode* self){
 void node_destroy(ADNode* self){
     if (self){
         if (self->parents){
+            printf("num parents: %lu\n", self->num_parents);
             free(self->parents);
             self->parents = NULL;
         }

@@ -7,6 +7,7 @@
 #include "matrix.h"
 #include <math.h>
 #include <assert.h>
+#include "tensor.h"
 
 #pragma region Activation Functions
 
@@ -22,6 +23,7 @@ void relu(Matrix* X){
 
     }
 };
+
 
 void sigmoid(Matrix* X){
     if (X->n_cols){

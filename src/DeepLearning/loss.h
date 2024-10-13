@@ -40,11 +40,8 @@ Tensor* L2_loss_tensor(Tensor* prediction, Tensor* label){
         printf("Tensor sizes do not match\n.");
         exit(0);
     }
-    printf("Prediction\n");
     Tensor* diff = prediction->subtract(prediction, label);
-    printf("Diff\n");
     Tensor* diff_T = diff->transpose(diff);
-    printf("Diff_T\n");
     Tensor* loss = diff_T->dot_product(diff_T, diff);
     diff->free(diff);
     diff_T->free(diff_T);

@@ -43,6 +43,7 @@ typedef struct Tensor{
         struct Tensor* (*sqrt)(struct Tensor* self);
         struct Tensor* (*exp)(struct Tensor* self);
         struct Tensor* (*log)(struct Tensor* self);
+        struct Tensor* (*relu)(struct Tensor* self);
 
         double (*froebenius_norm)(struct Tensor* self);
 
@@ -97,6 +98,8 @@ void tensor_destroy(Tensor* self){
             for (size_t j = 0; j < self->n_cols; j++){
                 ADNode* node = self->get_node(self, i, j);
                 node->destroy(node);
+                node = NULL;
+                self->set_node(self, node, i, j);
 
             }
         }
@@ -487,6 +490,27 @@ Tensor* tensor_abs(Tensor* self){
     return tensor;
 };
 
+Tensor* tensor_relu(Tensor* self){
+    Tensor* result = tensor_new(self->n_rows, self->n_cols);
+    ADNode* n = NULL;
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            if (node->get_val(node) >= 0){
+                n = node_new(node->get_val(node), 1, 0);
+            } 
+            else {
+                n = node_new(0.0, 1, 0);
+            }
+                result->set_node(result, n, i, j);
+                n->set_parent(n, node, 0);
+        }
+    }
+    return result;
+    
+};
+
 Tensor* tensor_create_identity(const size_t n){
     Tensor* identity = tensor_new(n, n);
 
@@ -637,6 +661,7 @@ void tensor_init(Tensor* self){
     self->sqrt = tensor_sqrt;
     self->exp = tensor_exp;
     self->log = tensor_log;
+    self->relu = tensor_relu;
 
 };
 #endif // __TENSOR_H__
