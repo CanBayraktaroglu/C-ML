@@ -23,6 +23,7 @@ void main(void){
     C->print_val(C);
 
     // TODO BUILD GRAPH
+    
 
     printf("Destroying graph.\n"); 
     graph->free(graph);

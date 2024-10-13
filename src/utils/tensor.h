@@ -205,7 +205,7 @@ Tensor* tensor_scalar_product(Tensor* self, const double scalar){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* source_node = self->get_node(self, i, j);
             ADNode* target_node = result->get_node(result, i, j);
-            ADNode* constant_node = node_new(scalar, 0);
+            ADNode* constant_node = node_new(scalar, 0, 0);
             ADNode* resulting_node = source_node->multiply(source_node, constant_node);
             memcpy(target_node, resulting_node, sizeof(ADNode));
         }
@@ -218,7 +218,7 @@ void tensor_scalar_product_inplace(Tensor* self, const double scalar){
         for (size_t j = 0; j < self->n_cols; j++){
                         
             ADNode* source_node = self->get_node(self, i, j);
-            ADNode* constant_node = node_new(scalar, 0);
+            ADNode* constant_node = node_new(scalar, 0, 0);
             ADNode* target_node = source_node->multiply(source_node, constant_node);
             self->set_node(self, target_node, i, j);
         }
@@ -371,7 +371,7 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
     for (size_t i = 0; i < result->n_rows; i++){
         for (size_t j = 0; j < result->n_cols; j++){
             
-            ADNode* result_node = node_new(0.0, self->n_cols);
+            ADNode* result_node = node_new(0.0, self->n_cols, 0);
 
             for (size_t k = 0; k < self->n_cols; k++){
                 ADNode* self_node = self->get_node(self, i, k);
@@ -417,7 +417,7 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
     
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < tensor->n_cols; j++){
-            ADNode* result_node = node_new(0.0, self->n_cols);
+            ADNode* result_node = node_new(0.0, self->n_cols, 0);
 
             for (size_t k = 0; k < self->n_cols; k++){
                 ADNode* self_node = self->get_node(self, i, k);
@@ -456,7 +456,7 @@ void tensor_abs_inplace(Tensor* self){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* node = self->get_node(self, i, j);
             if (node->get_val(node) < 0){
-                ADNode* constant_node = node_new(-1.0, 0);
+                ADNode* constant_node = node_new(-1.0, 0, 0);
                 ADNode* result_node = node->multiply(node, constant_node);
                 self->set_node(self, result_node, i, j);
             }
@@ -471,7 +471,7 @@ Tensor* tensor_abs(Tensor* self){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* node = self->get_node(self, i, j);
             if (node->get_val(node) < 0){
-                ADNode* constant_node = node_new(-1.0, 0);
+                ADNode* constant_node = node_new(-1.0, 0, 0);
                 ADNode* result_node = node->multiply(node, constant_node);
                 tensor->set_node(tensor, result_node, i, j);
             }
@@ -485,7 +485,7 @@ Tensor* tensor_create_identity(const size_t n){
     Tensor* identity = tensor_new(n, n);
 
     for (size_t i = 0; i < n; i++){
-        ADNode* node = node_new(1.0, 0);
+        ADNode* node = node_new(1.0, 0, 0);
         identity->set_node(identity, node, i, i); 
     }
 
@@ -586,7 +586,7 @@ Tensor* tensor_create_from_array(const size_t n_rows, const size_t n_cols, const
     Tensor* tensor = tensor_new(n_rows, n_cols);
     for (size_t i = 0; i < n_rows; i++){
         for (size_t j = 0; j < n_cols; j++){ 
-            ADNode* node = node_new(arr[i][j], 0);
+            ADNode* node = node_new(arr[i][j], 0, 0);
             tensor->set_node(tensor, node, i, j);
         }
     }

@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "matrix.h"
 #include <math.h>
+#include "act_fn..h"
 
 #pragma region Feed Forward Layer 
 

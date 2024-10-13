@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "stdio.h"
+#include "string.h"
 
 // Core data structure for storing value and derivative
 typedef struct {
@@ -19,6 +20,7 @@ typedef struct ADNode {
     size_t num_parents;
     size_t topology_idx;
     char visited;
+    char is_trainable;
 
     // Methods
         void (*backward)(struct ADNode* self);
@@ -31,6 +33,8 @@ typedef struct ADNode {
         double (*get_val)(struct ADNode* self);
         double (*get_grad)(struct ADNode* self);
         
+        struct ADNode* (*copy)(struct ADNode* self);
+        
         struct ADNode* (*add)(struct ADNode* self, struct ADNode* node);
         struct ADNode* (*multiply)(struct ADNode* self, struct ADNode* node);
         struct ADNode* (*subtract)(struct ADNode* self, struct ADNode* node);
@@ -38,11 +42,12 @@ typedef struct ADNode {
         struct ADNode* (*exp)(struct ADNode* self);
         struct ADNode* (*log)(struct ADNode* self);
 
+
 }ADNode;
 
 void node_init(ADNode* self);
 
-ADNode* node_new(const double value, const size_t num_parents) {
+ADNode* node_new(const double value, const size_t num_parents, char is_trainable){
     ADNode* node = (ADNode*)malloc(sizeof(ADNode));
     node->data.value = value;
     node->data.grad = 0.0;
@@ -54,21 +59,35 @@ ADNode* node_new(const double value, const size_t num_parents) {
     }
     
     //Set Methods
+    node->is_trainable = is_trainable;
     node->backward = NULL;
     node->init = node_init;
-
     node->init(node);
 
     return node;
-}
+};
+
+ADNode* node_copy(ADNode* self){
+    ADNode* node = (ADNode*)malloc(sizeof(ADNode));
+    if (node == NULL){
+        printf("Failed to allocate memory for AD Node.\n");
+        exit(1);
+    }
+    
+    memcpy(node, self, sizeof(ADNode));
+    return node;
+};
 
 void node_destroy(ADNode* self){
     if (self){
-        printf("Freeing node.\n");
+        if (self->topology_idx){
+            printf("Freeing node with topology index %lu.\n", self->topology_idx);
+        }
         if (self->parents){
             free(self->parents);
             self->parents = NULL;
         }
+
         free(self);
         self = NULL;
     }
@@ -140,7 +159,7 @@ void node_set_grad(ADNode* self, const double grad){
     self->data.grad = grad;
 };
 
-static double node_get_val(ADNode* self){
+double node_get_val(ADNode* self){
     return self->data.value;
 };
 
@@ -149,7 +168,8 @@ static double node_get_grad(ADNode* self){
 }
 
 ADNode* node_add(ADNode* self, ADNode* node){
-    ADNode* result = node_new(self->get_val(self) + node->get_val(node), 2);
+
+    ADNode* result = node_new(self->get_val(self) + node->get_val(node), 2, 0);
 
     result->parents[0] = self;
     result->parents[1] = node;
@@ -158,7 +178,7 @@ ADNode* node_add(ADNode* self, ADNode* node){
 };
 
 ADNode* node_multiply(ADNode* self, ADNode* node){
-    ADNode* result = node_new(self->get_val(self) * node->get_val(node), 2);
+    ADNode* result = node_new(self->get_val(self) * node->get_val(node), 2, 0);
 
     result->parents[0] = self;
     result->parents[1] = node;
@@ -167,25 +187,26 @@ ADNode* node_multiply(ADNode* self, ADNode* node){
 };
 
 ADNode* node_sqrt(ADNode* self){
-    ADNode* result = node_new(sqrt(self->get_val(self)), 1); 
+    ADNode* result = node_new(sqrt(self->get_val(self)), 1, 0); 
     result->parents[0] = self;
     result->backward = backward_sqrt;
 };
 
 ADNode* node_exp(ADNode* self){
-    ADNode* result = node_new(exp(self->get_val(self)), 1); 
+
+    ADNode* result = node_new(exp(self->get_val(self)), 1, 0); 
     result->parents[0] = self;
     result->backward = backward_exp;
 };
 
 ADNode* node_log(ADNode* self){
-    ADNode* result = node_new(log(self->get_val(self)), 1); 
+    ADNode* result = node_new(log(self->get_val(self)), 1, 0); 
     result->parents[0] = self;
     result->backward = backward_log;
 };
 
 ADNode* node_subtract(ADNode* self, ADNode* node){
-    ADNode* result = node_new(self->get_val(self) - node->get_val(node), 2);
+    ADNode* result = node_new(self->get_val(self) - node->get_val(node), 2, 0);
 
     result->parents[0] = self;
     result->parents[1] = node;
@@ -206,10 +227,9 @@ void node_init(ADNode* self){
     self->sqrt = node_sqrt;
     self->exp = node_exp;
     self->log = node_log;
+    self->copy = node_copy;
 };
 
 #pragma region Computation Graph
-
-
 
 #endif // AUTODIFF_H

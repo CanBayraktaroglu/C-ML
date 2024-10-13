@@ -32,6 +32,22 @@ void L2_loss(Matrix* prediction, Matrix* label, Matrix** loss){
     free(loss_T);
     *loss = _loss;    
 };
+
+Tensor* L2_loss_tensor(Tensor* prediction, Tensor* label){
+    if (prediction->n_rows != label->n_rows || prediction->n_cols != label->n_cols){
+        printf("Tensor sizes do not match\n.");
+        prediction->destroy(prediction);
+        label->destroy(label);
+        exit(0);
+    }
+
+    Tensor* loss = prediction->subtract(prediction, label);
+    Tensor* loss_T = loss->transpose(loss);
+    Tensor* _loss = loss->dot_product(loss_T, loss);
+    loss->destroy(loss);
+    loss_T->destroy(loss_T);
+    return _loss;
+};
  
 void backward_L2_loss(Matrix* a_out, Matrix* y, Matrix** dC_da_out){
     if (a_out == NULL || y == NULL){

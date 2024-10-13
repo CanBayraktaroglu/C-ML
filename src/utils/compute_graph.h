@@ -2,18 +2,25 @@
 #define __COMPUTE_GRAPH_H__
 
 #include "autodifferentation.h"
+#include "optimizer.h"
 
 // ADNODE GRAPH IMPLEMENTATION
 // Graph Structure
 typedef struct ComputeGraph{
     struct ComputeGraph* self;
+    ADNode* head;
     ADNode** nodes;
     size_t num_nodes;
     size_t capacity;
+    Adam_Optimizer* optimizer;
+
     void (*add_node)(struct ComputeGraph* self, ADNode* node);
     void (*free)(struct ComputeGraph* self);
     void (*sort)(struct ComputeGraph* self);
-    void (*backward)(struct ComputeGraph* self);
+    void (*propagate_back)(struct ComputeGraph* self);
+    void (*prune)(struct ComputeGraph* self);
+    void (*optimize)(struct ComputeGraph* self);
+
 }ComputeGraph;  
 
 
@@ -26,7 +33,21 @@ void add_node_to_graph(ComputeGraph* self, ADNode* node){
     self->nodes[self->num_nodes++] = node;
 };
 
-void free_graph(ComputeGraph* self){
+void graph_prune(ComputeGraph* self){
+    if (self){
+        for (size_t i=0; i < self->num_nodes; i++){
+            ADNode* node = self->nodes[i];
+            if (node->is_trainable) continue;
+
+            node->destroy(node);
+
+        }
+        
+        free(self->nodes);
+    }
+};
+
+void graph_free(ComputeGraph* self){
     if (self){
         for (size_t i=0; i < self->num_nodes; i++){
             ADNode* node = self->nodes[i];
@@ -39,19 +60,41 @@ void free_graph(ComputeGraph* self){
     }
 };
 
-static void dfs(ADNode* node, ADNode** sorted, size_t* idx){
-    if (node->visited) return;
+void dfs_sort(ADNode* node, ADNode** sorted, size_t* idx){
+    if (node == NULL || node->visited) return;
     node->visited = 1;
 
     for (size_t i = 0; i < node->num_parents; i++){
-        dfs(node->parents[i], sorted, idx);
+        dfs_sort(node->parents[i], sorted, idx);
     }
 
-    node->topology_idx = (*idx)--; // going backward means indices of nodes are lower
+    node->topology_idx = (*idx)--; 
     sorted[node->topology_idx] = node;
 };
 
-void topological_sort(ComputeGraph* graph){
+void dfs_explore(ComputeGraph* graph, ADNode* node){
+    if (node == NULL || node->visited) return;
+    node->visited = 1;
+    graph->add_node(graph, node);
+
+    for (size_t i = 0; i < node->num_parents; i++){
+        dfs_explore(graph, node->parents[i]);
+    }
+
+};
+
+void dfs_backward(ADNode* node){
+    if (node == NULL || node->visited) return;
+    node->visited = 1;
+    if (node->backward) node->backward(node);
+
+    for (size_t i = 0; i < node->num_parents; i++){
+        dfs_backward(node->parents[i]);
+    }
+
+};
+
+void graph_topological_sort(ComputeGraph* graph){
     ADNode** sorted = (ADNode**)malloc(graph->num_nodes * sizeof(ADNode*));
     size_t idx = graph->num_nodes - 1;
 
@@ -62,7 +105,7 @@ void topological_sort(ComputeGraph* graph){
 
     // Traverse and add nodes to corresponding places in sorted array
     for (size_t i = 0; graph->num_nodes; i++){
-        if (!graph->nodes[i]->visited) dfs(graph->nodes[i], sorted, &idx);
+        if (!graph->nodes[i]->visited) dfs_sort(graph->nodes[i], sorted, &idx);
     }
 
     // Replace the original array with the sorted one
@@ -70,19 +113,43 @@ void topological_sort(ComputeGraph* graph){
     graph->nodes = sorted;
 };
 
-void backward_pass(ComputeGraph* self){
-    //perform topological sort
-    topological_sort(self);
+void graph_propagate_back(ComputeGraph* self){
 
     // Set gradient of the output Node to 1
-    self->nodes[self->num_nodes - 1]->data.grad = 1.0;
+    self->head->data.grad = 1.0;
 
-    // Perform backward pass
-    for (size_t i = self->num_nodes - 1; i >= 0; i--){
-        ADNode* node = self->nodes[i];
-        if (node->backward) node->backward(node);
+    // Set all nodes to unvisited
+    for (size_t i = 0; i < self->num_nodes; i++){
+        self->nodes[i]->visited = 0;
     }
+
+    // Traverse graph and propagate back
+    dfs_backward(self->head);
+    
 };
+
+void graph_optimize(ComputeGraph* self){
+    return;
+};
+
+void graph_build(ComputeGraph* graph, ADNode* output){ 
+    if (graph == NULL){
+        printf("Graph is NULL\n");
+        return;
+    }
+
+    if (output == NULL){
+        printf("Output Node is NULL\n");
+        return;
+    }
+
+
+    // Set head of graph
+    graph->head = output;
+
+    // Traverse graph of nodes
+    dfs_explore(graph, graph->head);
+};      
 
 ComputeGraph* graph_new(){
     ComputeGraph* graph = (ComputeGraph*)malloc(sizeof(ComputeGraph));
@@ -92,9 +159,12 @@ ComputeGraph* graph_new(){
 
     // Set methods
     graph->add_node = add_node_to_graph;
-    graph->free = free_graph;
-    graph->sort = topological_sort;
-    graph->backward = backward_pass;
+    graph->free = graph_free;
+    graph->sort = graph_topological_sort;
+    graph->propagate_back = graph_propagate_back;
+    graph->prune = graph_prune;
+    graph->optimize = graph_optimize;
+
     return graph; 
 };
 #pragma endregion Computation Graph
