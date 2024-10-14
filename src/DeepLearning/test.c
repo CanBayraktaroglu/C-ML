@@ -18,15 +18,15 @@ void main(void){
     printf("Sigmoid\n"); 
     B->print_val(B);
 
-    const double C = B->froebenius_norm(B);
-    printf("Froebenius Norm: %f\n", C);
+    printf("Exp\n");
+    Tensor* C = B->exp(B);
 
-    Tensor* D = B->transpose(B);
     printf("Transpose\n");
+    Tensor* D = B->transpose(B);
     D->print_val(D);
 
     printf("L2 Loss\n");
-    Tensor* loss = L2_loss_tensor(A, B);
+    Tensor* loss = L2_loss_tensor(B, C);
     
     // TODO BUILD GRAPH
     printf("Building graph.\n");
@@ -35,12 +35,29 @@ void main(void){
     printf("Loss: %f\n", loss->get_val(loss, 0, 0));
     printf("Graph num nodes: %lu\n", compute_graph->num_nodes);
 
+    //Backward
+    printf("Propagating back.\n");
+    compute_graph->propagate_back(compute_graph);
+    
+    printf("Printing gradients of C.\n");
+    C->print_grad(C);
+
+
+    printf("Printing gradients of B.\n");
+    B->print_grad(B);
+
+    printf("Printing gradients of A.\n");
+    A->print_grad(A);
+
     printf("Destroying graph.\n"); 
     compute_graph->destroy(compute_graph);
 
     printf("Destroying tensors.\n");
+
     A->free(A);
     B->free(B);
+    C->free(C);
+
     loss->free(loss);
     D->free(D);
 };
