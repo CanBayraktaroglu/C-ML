@@ -69,17 +69,22 @@ The Deep Learning project is organized as follows:
 - `src/DeepLearning/`: Contains the source code for the Deep Learning implementation. Key files include:
 
   - [`dl.c`](src/DeepLearning/dl.c): The main entry point for the program.
-  - [`models.h`](src/DeepLearning/models.h): Header file for the Deep Learning Models implementation.
-  - [`layers.h`](src/DeepLearning/layers.h): Header file for the Deep Learning Layers implementation.
-  - [`act_fn.h`](src/DeepLearning/act_fn.h): Header file for the Activation Functions implementation.
-  - [`loss.h`](src/DeepLearning/loss.h): Header file for the Loss implementation. 
-  - [`optimizer.h`](src/DeepLearning/optimizer.h): Header file for the Optimizer implementation.
+  - [`models.h`](src/DeepLearning/models.h): Implementation for the Deep Learning Models implementation.
+  - [`layers.h`](src/DeepLearning/layers.h): Implementation for the Deep Learning Layers implementation.
+  - [`act_fn.h`](src/DeepLearning/act_fn.h): Implementation for the Activation Functions implementation.
+  - [`loss.h`](src/DeepLearning/loss.h): Implementation for the Loss implementation. 
+  - [`optimizer.h`](src/DeepLearning/optimizer.h): Implementation for the Optimizer implementation.
+
+- `src/utils/`: Contains the autodifferentation, tensor and computation graph implementations.
+  - [`autodifferentation.h`](src/utils/autodifferentation.h): Implementation for Autodifferentation Node
+  - [`tensor.h`](src/utils/tensor.h): Implementation for a Tensor Object based on ADNode's.
+  - [`compute_graph.h`](src/utils/compute_graph.h): Implementation for a Compute Graph.
 
 This project implements a modular neural network architecture, allowing for the creation of various network topologies. It includes implementations of:
 
 - Feedforward layers
 - Activation functions (ReLU, Sigmoid, Tanh)
-- Optimization algorithms (Stochastic Gradient Descent, Adam)
+- Optimization algorithms (Adam)
 - Loss functions (Mean Squared Error, Cross-Entropy)
 
 The neural network can be trained using backpropagation and supports both classification and regression tasks.
