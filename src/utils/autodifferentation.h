@@ -41,8 +41,8 @@ typedef struct ADNode {
         struct ADNode* (*sqrt)(struct ADNode* self);
         struct ADNode* (*exp)(struct ADNode* self);
         struct ADNode* (*log)(struct ADNode* self);
-        struct ADNode* (*sigmoid)(struct ADNode* self); 
-        struct ADNode* (*tanh)(struct ADNode* self);
+        struct ADNode* (*sigmoid)(struct ADNode* self);
+        struct ADNode* (*tanh)(struct ADNode* self); 
 
 
 }ADNode;
@@ -76,7 +76,7 @@ ADNode* node_copy(ADNode* self){
         printf("Failed to allocate memory for AD Node.\n");
         exit(1);
     }
-    
+    // Shared
     memcpy(node, self, sizeof(ADNode));
     return node;
 };
