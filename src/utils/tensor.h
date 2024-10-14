@@ -44,6 +44,8 @@ typedef struct Tensor{
         struct Tensor* (*exp)(struct Tensor* self);
         struct Tensor* (*log)(struct Tensor* self);
         struct Tensor* (*relu)(struct Tensor* self);
+        struct Tensor* (*sigmoid)(struct Tensor* self);
+        struct Tensor* (*tanh)(struct Tensor* self);
 
         double (*froebenius_norm)(struct Tensor* self);
 
@@ -511,6 +513,30 @@ Tensor* tensor_relu(Tensor* self){
     
 };
 
+Tensor* tensor_sigmoid(Tensor* self){
+    Tensor* result = tensor_new(self->n_rows, self->n_cols);
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->sigmoid(node);
+            result->set_node(result, result_node, i, j);
+        }
+    }
+    return result;
+};
+
+Tensor* tensor_tanh(Tensor* self){
+    Tensor* result = tensor_new(self->n_rows, self->n_cols);
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            ADNode* result_node = node->tanh(node);
+            result->set_node(result, result_node, i, j);
+        }
+    }
+    return result;
+};
+
 Tensor* tensor_create_identity(const size_t n){
     Tensor* identity = tensor_new(n, n);
 
@@ -662,6 +688,8 @@ void tensor_init(Tensor* self){
     self->exp = tensor_exp;
     self->log = tensor_log;
     self->relu = tensor_relu;
+    self->sigmoid = tensor_sigmoid;
+    self->tanh = tensor_tanh;
 
 };
 #endif // __TENSOR_H__
