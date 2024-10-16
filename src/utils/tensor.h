@@ -306,7 +306,7 @@ Tensor* tensor_subtract(Tensor* self, Tensor* tensor){
             ADNode* node_A = self->get_node(self, i, j);
             ADNode* node_B = tensor->get_node(tensor, i, j);
             
-            ADNode* resulting_node = node_A->subtract(node_A, node_B);
+            ADNode* resulting_node = node_subtract(node_A, node_B);
             result->set_node(result, resulting_node, i, j);
         }
     }
@@ -389,7 +389,7 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
             for (size_t k = 0; k < self->n_cols; k++){
                 ADNode* self_node = self->get_node(self, i, k);
                 ADNode* tensor_node = tensor->get_node(tensor, k, j);
-                ADNode* product_node = self_node->multiply(self_node, tensor_node);
+                ADNode* product_node = node_multiply(self_node, tensor_node); 
 
                 result_node->set_parent(result_node, product_node, k);
                 result_node->data.value += product_node->get_val(product_node);
@@ -436,7 +436,7 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
                 ADNode* self_node = self->get_node(self, i, k);
                 ADNode* tensor_node = tensor->get_node(tensor, k, j);
 
-                ADNode* product_node = self_node->multiply(self_node, tensor_node);
+                ADNode* product_node = node_multiply(self_node, tensor_node);
                 result_node->set_parent(result_node, product_node, k);
                 
                 result_node->data.value += product_node->get_val(result_node);
@@ -490,7 +490,7 @@ void tensor_abs_inplace(Tensor* self){
             ADNode* node = self->get_node(self, i, j);
             if (node->get_val(node) < 0){
                 ADNode* constant_node = node_new(-1.0, 0, 0);
-                ADNode* result_node = node->multiply(node, constant_node);
+                ADNode* result_node = node_multiply(node, constant_node);
                 self->set_node(self, result_node, i, j);
             }
         }
@@ -513,8 +513,7 @@ Tensor* tensor_abs(Tensor* self){
             else {
                 constant_node = node_new(1.0, 0, 0);
             }
-            result_node = node->multiply(node, constant_node);
-
+            result_node = node_multiply(node, constant_node);
             tensor->set_node(tensor, result_node, i, j);
         }
     }
@@ -547,7 +546,7 @@ Tensor* tensor_sigmoid(Tensor* self){
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* node = self->get_node(self, i, j);
-            ADNode* result_node = node->sigmoid(node);
+            ADNode* result_node = node_sigmoid(node);
             result->set_node(result, result_node, i, j);
         }
     }
@@ -559,7 +558,7 @@ Tensor* tensor_tanh(Tensor* self){
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* node = self->get_node(self, i, j);
-            ADNode* result_node = node->tanh(node);
+            ADNode* result_node = node_tanh(node);
             result->set_node(result, result_node, i, j);
         }
     }
@@ -630,7 +629,7 @@ Tensor* tensor_exp(Tensor* self){
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* node = self->get_node(self, i, j);
-            ADNode* result_node = node->exp(node);
+            ADNode* result_node = node_exp(node);
             tensor->set_node(tensor, result_node, i, j);
         }
     }
@@ -695,6 +694,7 @@ void tensor_init(Tensor* self){
     self->free = tensor_free;
     self->destroy = tensor_destroy;
     self->copy = tensor_copy;
+    self->transpose = tensor_transpose;
     
     self->add_inplace = tensor_add_inplace;
     self->abs_inplace = tensor_abs_inplace;
@@ -705,21 +705,6 @@ void tensor_init(Tensor* self){
     self->sqrt_inplace = tensor_sqrt_inplace;
     self->exp_inplace = tensor_exp_inplace;
     self->log_inplace = tensor_log_inplace;
-
-    self->add = tensor_add;
-    self->abs = tensor_abs;
-    self->subtract = tensor_subtract;
-    self->transpose = tensor_transpose;
-    self->dot_product = tensor_dot_product;
-    self->scalar_product = tensor_scalar_product;
-
-    self->froebenius_norm = tensor_froebenius_norm;
-    self->sqrt = tensor_sqrt;
-    self->exp = tensor_exp;
-    self->log = tensor_log;
-    self->relu = tensor_relu;
-    self->sigmoid = tensor_sigmoid;
-    self->tanh = tensor_tanh;
 
 };
 #endif // __TENSOR_H__

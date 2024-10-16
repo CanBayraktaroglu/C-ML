@@ -246,15 +246,8 @@ void node_init(ADNode* self){
     self->set_parent = node_set_parent;
     self->get_val = node_get_val;
     self->get_grad = node_get_grad;
-    self->add = node_add;
-    self->multiply = node_multiply;
-    self->subtract = node_subtract;
-    self->sqrt = node_sqrt;
-    self->exp = node_exp;
-    self->log = node_log;
+
     self->copy = node_copy;
-    self->sigmoid = node_sigmoid;
-    self->tanh = node_tanh;
 };
 
 #pragma region Computation Graph

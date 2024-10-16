@@ -14,12 +14,12 @@ void main(void){
 
     Tensor* A = tensor_create_from_array(4, 1, arr_1);
 
-    Tensor* B = A->sigmoid(A);
+    Tensor* B = tensor_sigmoid(A);
     printf("Sigmoid\n"); 
     B->print_val(B);
 
     printf("Exp\n");
-    Tensor* C = B->exp(B);
+    Tensor* C = tensor_exp(B);
 
     printf("Transpose\n");
     Tensor* D = B->transpose(B);
