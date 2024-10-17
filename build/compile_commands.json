@@ -1,0 +1,22 @@
+[
+{
+  "directory": "/home/cb/Projects/C-ML/build",
+  "command": "/usr/bin/gcc  -I/home/cb/Projects/C-ML/build/../src/utils -I/home/cb/Projects/C-ML/build/../src/DT -I/home/cb/Projects/C-ML/build/../src/regression/LR -I/home/cb/Projects/C-ML/build/../src/DeepLearning -g -std=gnu99 -o CMakeFiles/knn.dir/home/cb/Projects/C-ML/src/KNN/knn.c.o -c /home/cb/Projects/C-ML/src/KNN/knn.c",
+  "file": "/home/cb/Projects/C-ML/src/KNN/knn.c"
+},
+{
+  "directory": "/home/cb/Projects/C-ML/build",
+  "command": "/usr/bin/gcc  -I/home/cb/Projects/C-ML/build/../src/utils -I/home/cb/Projects/C-ML/build/../src/DT -I/home/cb/Projects/C-ML/build/../src/regression/LR -I/home/cb/Projects/C-ML/build/../src/DeepLearning -g -std=gnu99 -o CMakeFiles/dt.dir/home/cb/Projects/C-ML/src/DT/dt.c.o -c /home/cb/Projects/C-ML/src/DT/dt.c",
+  "file": "/home/cb/Projects/C-ML/src/DT/dt.c"
+},
+{
+  "directory": "/home/cb/Projects/C-ML/build",
+  "command": "/usr/bin/gcc  -I/home/cb/Projects/C-ML/build/../src/utils -I/home/cb/Projects/C-ML/build/../src/DT -I/home/cb/Projects/C-ML/build/../src/regression/LR -I/home/cb/Projects/C-ML/build/../src/DeepLearning -g -std=gnu99 -o CMakeFiles/dl.dir/home/cb/Projects/C-ML/src/DeepLearning/dl.c.o -c /home/cb/Projects/C-ML/src/DeepLearning/dl.c",
+  "file": "/home/cb/Projects/C-ML/src/DeepLearning/dl.c"
+},
+{
+  "directory": "/home/cb/Projects/C-ML/build",
+  "command": "/usr/bin/gcc  -I/home/cb/Projects/C-ML/build/../src/utils -I/home/cb/Projects/C-ML/build/../src/DT -I/home/cb/Projects/C-ML/build/../src/regression/LR -I/home/cb/Projects/C-ML/build/../src/DeepLearning -g -std=gnu99 -o CMakeFiles/test.dir/home/cb/Projects/C-ML/src/DeepLearning/test.c.o -c /home/cb/Projects/C-ML/src/DeepLearning/test.c",
+  "file": "/home/cb/Projects/C-ML/src/DeepLearning/test.c"
+}
+]
