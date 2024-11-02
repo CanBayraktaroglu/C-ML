@@ -14,13 +14,14 @@ typedef struct {
 
 // Node in the computational graph
 typedef struct ADNode {
-    struct ADNode* self;    
+    struct ADNode* self;
     struct ADNode** parents;
     Dual data;
     size_t num_parents;
     size_t topology_idx;
     char visited;
     char is_trainable;
+    int depth;
 
     // Methods
         void (*backward)(struct ADNode* self);
@@ -29,12 +30,12 @@ typedef struct ADNode {
         void (*set_grad)(struct ADNode* self, const double grad);
         void (*set_parent)(struct ADNode* self, struct ADNode* parent, const size_t parent_idx);
         void (*init)(struct ADNode* self);
-    
+
         double (*get_val)(struct ADNode* self);
         double (*get_grad)(struct ADNode* self);
-        
+
         struct ADNode* (*copy)(struct ADNode* self);
-        
+
         struct ADNode* (*add)(struct ADNode* self, struct ADNode* node);
         struct ADNode* (*multiply)(struct ADNode* self, struct ADNode* node);
         struct ADNode* (*subtract)(struct ADNode* self, struct ADNode* node);
@@ -42,7 +43,7 @@ typedef struct ADNode {
         struct ADNode* (*exp)(struct ADNode* self);
         struct ADNode* (*log)(struct ADNode* self);
         struct ADNode* (*sigmoid)(struct ADNode* self);
-        struct ADNode* (*tanh)(struct ADNode* self); 
+        struct ADNode* (*tanh)(struct ADNode* self);
 
 
 }ADNode;
@@ -59,7 +60,7 @@ ADNode* node_new(const double value, const size_t num_parents, char is_trainable
     } else {
         node->parents = NULL;
     }
-    
+
     //Set Methods
     node->is_trainable = is_trainable;
     node->backward = NULL;
@@ -102,12 +103,12 @@ void backward_add(ADNode* node){
 
 void backward_sqrt(ADNode* node){
     const double da_dzi = 0.5 * (1.0 / sqrt(node->get_grad(node)));
-    node->parents[0]->data.grad += node->get_grad(node) * da_dzi; 
+    node->parents[0]->data.grad += node->get_grad(node) * da_dzi;
 };
 
 void backward_multiply(ADNode* node){
     for (size_t i = 0; i < node->num_parents; i++){
-        const double da_dzi = node->get_val(node) / node->parents[i]->data.value; 
+        const double da_dzi = node->get_val(node) / node->parents[i]->data.value;
         node->parents[i]->data.grad += node->get_grad(node) * da_dzi;
     }
 
@@ -125,12 +126,12 @@ void backward_log(ADNode* node){
 
 void backward_subtract(ADNode* node){
     node->parents[0]->data.grad += node->get_grad(node);
-    node->parents[1]->data.grad -= node->get_grad(node);  
+    node->parents[1]->data.grad -= node->get_grad(node);
 };
 
 void backward_sigmoid(ADNode* node){
     const double da_dzi = node->get_val(node) * (1 - node->get_val(node));
-    node->parents[0]->data.grad += node->get_grad(node) * da_dzi;   
+    node->parents[0]->data.grad += node->get_grad(node) * da_dzi;
 };
 
 void backward_tanh(ADNode* self){
@@ -197,21 +198,21 @@ ADNode* node_multiply(ADNode* self, ADNode* node){
 };
 
 ADNode* node_sqrt(ADNode* self){
-    ADNode* result = node_new(sqrt(self->get_val(self)), 1, 0); 
+    ADNode* result = node_new(sqrt(self->get_val(self)), 1, 0);
     result->parents[0] = self;
     result->backward = backward_sqrt;
     return result;
 };
 
 ADNode* node_exp(ADNode* self){
-    ADNode* result = node_new(exp(self->get_val(self)), 1, 0); 
+    ADNode* result = node_new(exp(self->get_val(self)), 1, 0);
     result->parents[0] = self;
     result->backward = backward_exp;
     return result;
 };
 
 ADNode* node_log(ADNode* self){
-    ADNode* result = node_new(log(self->get_val(self)), 1, 0); 
+    ADNode* result = node_new(log(self->get_val(self)), 1, 0);
     result->parents[0] = self;
     result->backward = backward_log;
     return result;
