@@ -50,8 +50,6 @@ struct Layer{
     void (*destroy)(struct Layer* layer);
 };
 
-
-
 void feed_forward_layer_forward(Layer* layer, Tensor* X){
     if (layer == NULL || X == NULL){
         printf("Layer or X is pointing to NULL in feed_forward_layer_forward.\n");

@@ -43,8 +43,6 @@ void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t inp
     *(model->layers + model->num_layers - 1) = layer;
 };
 
-
-
 #pragma region Sequential Neural Network Layerswise 
 
 // Sequential NN
