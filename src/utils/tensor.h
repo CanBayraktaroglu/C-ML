@@ -407,7 +407,7 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
     return result;  
 };
 
-void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
+void tensor_dot_product_inplace(Tensor** self, Tensor* tensor){
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
@@ -418,18 +418,19 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
         return;
     }
 
-    if (self->n_cols != tensor->n_rows){
+    if ((*self)->n_cols != tensor->n_rows){
         printf("Tensor dimensions do not match for multiplication.\n");
         exit(0);
     }
 
+    Tensor* tmp = (*self)->copy(self);
     // reallocate_memory
-    if (self->n_cols != tensor->n_cols){
-        self->realloc(self, self->n_rows, tensor->n_cols);
-        self->n_cols = tensor->n_cols;
+    if ((*self)->n_cols != tensor->n_cols){
+        (*self)->realloc(*self, (*self)->n_rows, tensor->n_cols);
+        (*self)->n_cols = tensor->n_cols;
     }
     
-    for (size_t i = 0; i < self->n_rows; i++){
+    for (size_t i = 0; i < (*self)->n_rows; i++){
         for (size_t j = 0; j < tensor->n_cols; j++){
             ADNode* result_node = node_new(0.0, self->n_cols, 0);
 
