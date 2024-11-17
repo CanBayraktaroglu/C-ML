@@ -64,6 +64,7 @@ void main(void){
     tensor_print_val(layer_1->layer.ff_layer->biases);
 
     printf("Propagating back..\n");
+    printf("%f \n",graph->head->data.value);
     graph_propagate_back(graph);
     
     // Print grad and value of layer weights

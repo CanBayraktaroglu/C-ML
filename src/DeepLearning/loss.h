@@ -42,10 +42,11 @@ Tensor* L2_loss_tensor(Tensor* prediction, Tensor* label){
         exit(0);
     }
     Tensor* diff = tensor_subtract(prediction, label); 
-    Tensor* diff_T = diff->transpose(diff);
+    Tensor* diff_T = tensor_transpose(diff);
     Tensor* loss = tensor_dot_product(diff_T, diff);
-    diff->detach(diff);
-    diff_T->detach(diff_T);
+    
+    tensor_detach(diff);
+    tensor_detach(diff_T);
     return loss;
 };
  
