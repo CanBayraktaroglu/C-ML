@@ -44,6 +44,8 @@ typedef enum {
 
 struct Layer{
     struct Layer* self;
+    size_t num_features;
+    size_t num_neurons;
     LayerType type;
     LayerUnion layer;
     void (*forward)(struct Layer* layer, Tensor* X);
@@ -106,6 +108,8 @@ Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_f
     ff_layer->destroy = feed_forward_layer_destroy;
 
     layer->self = layer;
+    layer->num_features = n_features;
+    layer->num_neurons = n_neurons;
     layer->type = FEED_FORWARD;
     layer->layer.ff_layer = ff_layer;
 

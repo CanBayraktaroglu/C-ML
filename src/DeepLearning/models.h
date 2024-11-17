@@ -17,7 +17,7 @@ typedef struct Sequential_NN{
     Layer** layers;
 }Sequential_NN;
 
-Sequential_NN* init_sequential_nn(const size_t input_size, const size_t hidden_size, const size_t output_size){
+Sequential_NN* init_sequential_nn(){
     Sequential_NN* model = (Sequential_NN*)malloc(sizeof(Sequential_NN));
     model->num_layers = 0;
     model->layers = NULL;
@@ -32,7 +32,7 @@ void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t inp
     // Increment number of layers
     model->num_layers++;
 
-    if (*(model->layers) == NULL){
+    if (model->layers == NULL){
         model->layers = (Layer**)malloc(sizeof(Layer*));
     }else{
         model->layers = (Layer**)realloc(model->layers, model->num_layers * sizeof(Layer*));
@@ -41,6 +41,44 @@ void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t inp
     // Initialize feed forward neural layer
     Layer* layer = init_layer(FEED_FORWARD, output_size, input_size, act_fn);
     *(model->layers + model->num_layers - 1) = layer;
+};
+
+void destroy_sequential_nn(Sequential_NN* model){
+    if (model == NULL) return;
+    
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        layer->destroy(layer);
+    }    
+
+    free(model->layers);
+    model->layers = NULL;
+    free(model);
+
+};
+
+void print_sequential_nn(Sequential_NN* model){
+    printf("LAYERS:\n");
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        printf("    Idx: %lu ", i);
+        switch(layer->type){
+            case FEED_FORWARD:
+                printf("Type: FEED FORWARD, # Neurons: %lu ", layer->num_neurons);
+                break;
+            default:
+                printf("TYPE NOT SUPPORTED.");
+                break;
+        }
+        printf("\n");
+    }
+};
+
+void forward_sequential_nn(Sequential_NN* model, Tensor* X){
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        layer->forward(layer, X);
+    }
 };
 
 #pragma region Sequential Neural Network Layerswise 
