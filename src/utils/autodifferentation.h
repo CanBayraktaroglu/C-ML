@@ -69,12 +69,18 @@ ADNode* node_new(const double value, const size_t num_parents, char is_trainable
 };
 
 ADNode* node_copy(ADNode* self){
+    if (self == NULL){
+        printf("Node to be copied is pointing to NULL.\n");
+        return NULL;
+    }
+
     ADNode* node = node_new(self->data.value, self->num_parents, self->is_trainable); 
     
     if (node == NULL){
         printf("Failed to allocate memory for AD Node.\n");
         exit(0);
     }
+
     node->self = node;
     node->topology_idx = self->topology_idx;
     node->visited = self->visited;
@@ -85,18 +91,14 @@ ADNode* node_copy(ADNode* self){
     // Methods
     node->backward = self->backward;
     node->init(node);
-
-    node->parents = (ADNode**)malloc(self->num_parents * sizeof(ADNode*));
     
-    if (node->parents == NULL){
-        printf("Failed to allocate memory for AD Node parents.\n");
-        exit(1);
+    if (node->parents){
+        for (size_t i = 0; i < self->num_parents; i++){
+            ADNode* parent = self->parents[i];
+            node->set_parent(node, parent, i);
+        }
     }
 
-    for (size_t i = 0; i < self->num_parents; i++){
-        ADNode* parent = self->parents[i];
-        node->set_parent(node, parent, i);
-    }
     
     return node;
 };

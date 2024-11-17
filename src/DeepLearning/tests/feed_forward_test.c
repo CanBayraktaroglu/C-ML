@@ -21,9 +21,11 @@ void main(void){
 
     printf("Initializing Feed Forward Layer.\n");
     //Layer* layer = init_layer(FEED_FORWARD, 1, 4, tensor_relu_inplace);
-    add_feed_forward_layer(model, 2, 4, tensor_relu_inplace);
+    add_feed_forward_layer(model, 3, 4, tensor_relu_inplace);
     Layer* layer_0 = *(model->layers + 0);
-    add_feed_forward_layer(model, 1, 2, tensor_relu_inplace);
+    add_feed_forward_layer(model, 8, 3, tensor_relu_inplace);
+    add_feed_forward_layer(model, 3, 8, tensor_relu_inplace);
+    add_feed_forward_layer(model, 1, 3, tensor_relu_inplace);
     Layer* layer_1 = *(model->layers + 1);
 
     // TODO:
@@ -43,10 +45,16 @@ void main(void){
     graph_build(graph, X->get_node(X, 0, 0));
 
     printf("Propagating back..\n");
-    graph->propagate_back(graph);
+    graph_propagate_back(graph);
 
-    X->detach(X);
+    //tensor_print_grad(layer_0->layer.ff_layer->weights);
+    //tensor_print_grad(layer_0->layer.ff_layer->biases); 
+    //tensor_print_grad(layer_1->layer.ff_layer->weights);
+    //tensor_print_grad(layer_1->layer.ff_layer->biases);
+
+    tensor_detach(X);
     destroy_sequential_nn(model);
-    graph->destroy(graph);
+    printf("Number of nodes in graph: %lu\n", graph->num_nodes);
+    graph_destroy(graph);
 
 };

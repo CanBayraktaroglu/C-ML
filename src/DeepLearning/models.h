@@ -47,10 +47,10 @@ void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t inp
 void destroy_sequential_nn(Sequential_NN* model){
     if (model == NULL) return;
     
-    for (int i = model->num_layers - 1; i >= 0; i--){
-        printf("Destroying layer %i \n", i);
+    for (size_t i = 0; i < model->num_layers; i++){
         Layer* layer = *(model->layers + i);
         layer->destroy(layer);
+        *(model->layers + i) = NULL;    
     }    
 
     free(model->layers);
@@ -66,7 +66,7 @@ void print_sequential_nn(Sequential_NN* model){
         printf("    Idx: %lu ", i);
         switch(layer->type){
             case FEED_FORWARD:
-                printf("Type: FEED FORWARD, # Neurons: %lu ", layer->num_neurons);
+                printf("Type: FEED FORWARD, # out_neurons: %lu, # in_neurons: %lu", layer->num_neurons, layer->num_features);
                 break;
             default:
                 printf("TYPE NOT SUPPORTED.");

@@ -70,15 +70,15 @@ void feed_forward_layer_destroy(Layer* layer){
         printf("Layer is pointing to NULL in feed_forward_layer_destroy.\n");
         return;
     }
-    FeedForwardLayer* ff_layer = layer->layer.ff_layer;
 
+    FeedForwardLayer* ff_layer = layer->layer.ff_layer;
     tensor_detach(ff_layer->weights);
     ff_layer->weights = NULL;
-
     tensor_detach(ff_layer->biases);
     ff_layer->biases = NULL;
 
     free(ff_layer);
+    layer->layer.ff_layer = NULL;
     free(layer);
 };
 

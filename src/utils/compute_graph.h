@@ -77,7 +77,7 @@ void dfs_explore(ComputeGraph* graph, ADNode* node){
     if (node == NULL || node->visited) return;
     
     node->visited = 1;
-    graph->add_node(graph, node);
+    add_node_to_graph(graph, node);
 
     for (size_t i = 0; i < node->num_parents; i++){
         dfs_explore(graph, node->parents[i]);

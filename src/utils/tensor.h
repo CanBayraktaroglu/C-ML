@@ -100,15 +100,6 @@ Tensor* tensor_new_random(const size_t n_rows, const size_t n_cols){
 void tensor_realloc(Tensor* self, const size_t n_rows, const size_t n_cols){
     self->nodes = (ADNode**) realloc(self->nodes, n_rows * n_cols * sizeof(ADNode*));
     
-    /* for (size_t i = 0; i < n_rows; i++){
-        for (size_t j = 0; j < n_cols; j++){
-            ADNode* node = self->nodes[i * n_cols + j];
-            if (node == NULL){
-                self->nodes[i * n_cols + j] = node_new(0.0, 0, 0);
-            }
-        }
-    } */ 
-
     self->n_rows = n_rows;
     self->n_cols = n_cols;
 };
@@ -487,12 +478,12 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
 void tensor_dot_product_reversed_order_inplace(Tensor* self, Tensor* tensor){
     
     if (self == NULL){
-        printf("Tensor a is pointing to an empty address\n.");
+        printf("Tensor self is pointing to an empty address\n.");
         return;
     }
 
     if (tensor == NULL){
-        printf("Tensor b is pointing to an empty address\n.");
+        printf("Tensor tensor is pointing to an empty address\n.");
         return;
     }
 
@@ -533,6 +524,7 @@ void tensor_dot_product_reversed_order_inplace(Tensor* self, Tensor* tensor){
                 result_node->set_parent(result_node, product_node, k);
                 result_node->data.value += product_node->get_val(product_node);
             }
+
             // Set backward
             result_node->backward = backward_add;
 
@@ -568,11 +560,7 @@ Tensor* tensor_copy(Tensor* self){
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
             node = self->get_node(self, i, j);
-            new_node = node->copy(node);
-
-            // TODO FREE ONLY INITIALIZED NODES
-            //tensor_node = tensor->get_node(tensor, i, j);
-            //tensor_node->destroy(tensor_node);
+            new_node = node_copy(node);
             
             // Set the new node
             tensor->set_node(tensor, new_node, i, j);
@@ -597,7 +585,6 @@ void tensor_abs_inplace(Tensor* self){
 
 Tensor* tensor_abs(Tensor* self){
     Tensor* tensor = tensor_new(self->n_rows, self->n_cols);
-    printf("Copying tensor.\n");
 
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
@@ -793,7 +780,7 @@ Tensor* tensor_create_from_array(const size_t n_rows, const size_t n_cols, const
     for (size_t i = 0; i < n_rows; i++){
         for (size_t j = 0; j < n_cols; j++){ 
             // Get and Destroy the tensor node
-            ADNode* tensor_node = tensor->get_node(tensor, i, j);
+            //ADNode* tensor_node = tensor->get_node(tensor, i, j);
             //tensor_node->destroy(tensor_node);
             ADNode* node = node_new(arr[i][j], 0, 0);
             tensor->set_node(tensor, node, i, j);
