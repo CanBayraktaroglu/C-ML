@@ -147,7 +147,8 @@ void bfs_explore(ComputeGraph* graph, ADNode* node){
 
     while (front < rear) {
         ADNode* current = queue[front++];
-        add_node_to_graph(graph, current);    
+        queue[front - 1] = NULL;
+        add_node_to_graph(graph, current);   
 
         // Enqueue all unvisited parents
         for (size_t i = 0; i < current->num_parents; i++) {
@@ -156,6 +157,7 @@ void bfs_explore(ComputeGraph* graph, ADNode* node){
                     capacity *= 2;
                     queue = (ADNode**)realloc(queue, capacity * sizeof(ADNode*));
                 }
+                
                 queue[rear++] = current->parents[i];
                 current->parents[i]->visited = 1;
             }
@@ -176,12 +178,12 @@ void dfs_backward(ADNode* node){
 
 };
 
-void bfs_backward(ADNode* node){
+void bfs_backward(ComputeGraph* graph, ADNode* node){
     if(node == NULL) return;
 
     // Create a queue for BFS
-    printf("Num Parents: %lu\n", node->num_parents);    
-    ADNode** queue = (ADNode**)malloc(node->num_parents * sizeof(ADNode*));
+    // *INEFFICIENT SOLUTION w.r.t heap memory complexity*
+    ADNode** queue = (ADNode**)malloc(graph->num_nodes * sizeof(ADNode*));
     size_t front = 0, rear = 0;
 
     // Enqueue the starting node
@@ -191,7 +193,6 @@ void bfs_backward(ADNode* node){
 
     while (front < rear) {
         ADNode* current = queue[front++];
-        printf("Node: %f\n", current->data.value);
         // Enqueue all unvisited parents
         for (size_t i = 0; i < current->num_parents; i++) {
             if (!current->parents[i]->visited) {
@@ -218,7 +219,7 @@ void graph_propagate_back(ComputeGraph* self){
     }
 
     // Traverse graph and propagate back
-    bfs_backward(self->head);
+    bfs_backward(self, self->head);
     
 };
 
@@ -242,7 +243,7 @@ void graph_build(ComputeGraph* graph, ADNode* output){
     graph->head = output;
 
     // Traverse graph of nodes
-    bfs_explore(graph, graph->head);
+    dfs_explore(graph, graph->head);
 
 };      
 

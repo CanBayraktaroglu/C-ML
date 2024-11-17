@@ -69,9 +69,7 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     tensor->n_cols = n_cols;
 
     tensor->init = tensor_init;
-    tensor->init(tensor);
-
-    
+    tensor->init(tensor); 
 
     return tensor;
 };
