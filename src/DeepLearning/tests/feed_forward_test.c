@@ -10,7 +10,7 @@ void main(void){
         {4.0},
     };
     
-    printf("Creating Tensor from array.\n");
+    printf("Creating Tensor from array: %f.\n", arr[3][0]);
     Tensor* X = tensor_create_from_array(4, 1, arr);
 
     printf("Initializing Feed Forward Layer.\n");

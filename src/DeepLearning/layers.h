@@ -57,11 +57,9 @@ void feed_forward_layer_forward(Layer* layer, Tensor* X){
         printf("Layer or X is pointing to NULL in feed_forward_layer_forward.\n");
         return;    
     }
-    printf("Forward Pass starting.\n");
     FeedForwardLayer* ff_layer = layer->layer.ff_layer;
-    printf("Forward Pass initialized.\n");
     printf("reversed dot product \n");
-    tensor_dot_product_inplace(X, ff_layer->weights);
+    tensor_dot_product_inplace(&X, ff_layer->weights);
     printf("add in place\n");
     tensor_add_inplace(X, ff_layer->biases);
     
