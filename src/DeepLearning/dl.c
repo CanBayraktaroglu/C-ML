@@ -34,6 +34,7 @@ void main(void){
     
     // Optimizer
         Adam_Optimizer_* optimizer = NULL;
+
         printf("INITIALIZE OPTIMIZER.\n");
         init_Adam_optimizer_(&optimizer, 0.004f, 0.5f, 0.9f, 0.9f, 0.000001f, sequential_nn->layers, sequential_nn->num_layers);
 
@@ -52,7 +53,7 @@ void main(void){
 
     // Optimize
         printf("OPTIMIZATION.\n");
-        optimize_adam(optimizer, sequential_nn->layers);
+        optimize_adam_(optimizer, sequential_nn->layers);
         
     // Free allocated dynamic memory
         destroy_sequential_nn_(sequential_nn);
