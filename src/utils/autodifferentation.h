@@ -35,10 +35,7 @@ typedef struct ADNode {
         double (*get_grad)(struct ADNode* self);
 
         struct ADNode* (*copy)(struct ADNode* self);
-
-        struct ADNode* (*add)(struct ADNode* self, struct ADNode* node);
-        struct ADNode* (*multiply)(struct ADNode* self, struct ADNode* node);
-        struct ADNode* (*subtract)(struct ADNode* self, struct ADNode* node);
+        
         struct ADNode* (*sqrt)(struct ADNode* self);
         struct ADNode* (*exp)(struct ADNode* self);
         struct ADNode* (*log)(struct ADNode* self);
@@ -53,8 +50,9 @@ void node_init(ADNode* self);
 ADNode* node_new(const double value, const size_t num_parents, char is_trainable){
     ADNode* node = (ADNode*)malloc(sizeof(ADNode));
     node->data.value = value;
-     node->data.grad = 0.0;
+    node->data.grad = 0.0;
     node->num_parents = num_parents;
+    
     if (num_parents > 0) {
         node->parents = (ADNode**)malloc(num_parents * sizeof(ADNode*));
     } else {
@@ -100,7 +98,6 @@ ADNode* node_copy(ADNode* self){
         node->set_parent(node, parent, i);
     }
     
-    //memcpy(node, self, sizeof(ADNode));
     return node;
 };
 
@@ -112,7 +109,6 @@ void node_destroy(ADNode* self){
         }
 
         free(self);
-        self = NULL;
     }
 };
 

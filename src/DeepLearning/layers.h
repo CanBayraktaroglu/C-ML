@@ -56,10 +56,12 @@ void feed_forward_layer_forward(Layer* layer, Tensor* X){
         return;    
     }
     FeedForwardLayer* ff_layer = layer->layer.ff_layer;
+    
     printf("reversed dot product \n");
-    tensor_dot_product_inplace(&X, ff_layer->weights);
+    tensor_dot_product_reversed_order_inplace(X, ff_layer->weights);
+
     printf("add in place\n");
-    tensor_add_inplace(X, ff_layer->biases);
+    tensor_add_inplace(X, ff_layer->biases); 
     
     printf("Activation function\n");
     ff_layer->act_fn(X);
@@ -74,7 +76,9 @@ void feed_forward_layer_destroy(Layer* layer){
 
     tensor_detach(ff_layer->weights);
     tensor_detach(ff_layer->biases);
+
     free(ff_layer);
+    free(layer);
 };
 
 Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
@@ -88,6 +92,15 @@ Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_f
 
     ff_layer->weights = tensor_new(n_neurons, n_features);
     ff_layer->biases = tensor_new(n_neurons, 1);
+
+    // Set the nodes as trainable
+    for(size_t i = 0; i < n_neurons; i++){
+        for(size_t j = 0; j < n_features; j++){
+            ff_layer->weights->get_node(ff_layer->weights, i, j)->is_trainable = 1;
+        }
+            ff_layer->biases->get_node(ff_layer->weights, i, 0)->is_trainable = 1;
+    }
+
     ff_layer->act_fn = act_fn;
     ff_layer->forward = feed_forward_layer_forward;
     ff_layer->destroy = feed_forward_layer_destroy;
@@ -95,6 +108,10 @@ Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_f
     layer->self = layer;
     layer->type = FEED_FORWARD;
     layer->layer.ff_layer = ff_layer;
+
+    layer->forward = feed_forward_layer_forward;
+    layer->destroy = feed_forward_layer_destroy;
+
     return layer;
 };
 
@@ -106,9 +123,6 @@ Layer* init_layer(LayerType type, size_t n_neurons, size_t n_features, void (*ac
         case FEED_FORWARD:
             layer = init_feed_forward_layer(n_neurons, n_features, act_fn);
             layer->self = layer;
-            layer->type = FEED_FORWARD;
-            layer->forward = feed_forward_layer_forward;
-            layer->destroy = feed_forward_layer_destroy;
             break;
         default:
             printf("Layer type not supported.\n");
@@ -117,7 +131,6 @@ Layer* init_layer(LayerType type, size_t n_neurons, size_t n_features, void (*ac
 
     return layer;
 };
-
 
 #pragma region Feed Forward Layerwise
 

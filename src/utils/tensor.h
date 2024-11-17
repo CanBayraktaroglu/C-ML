@@ -71,12 +71,12 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     tensor->init = tensor_init;
     tensor->init(tensor);
 
-    for (size_t i = 0; i < n_rows; i++){
-        for (size_t j = 0; j < n_cols; j++){
+    for(size_t i = 0; i < n_rows; i++){
+        for(size_t j = 0; j < n_cols; j++){
             tensor->nodes[i * n_cols + j] = node_new(0.0, 0, 0);
         }
-    }
- 
+    };
+
     return tensor;
 };
 
@@ -126,8 +126,7 @@ void tensor_detach(Tensor* self){
         free(self->nodes);
         self->nodes = NULL;
         free(self);
-        self = NULL;
-    }
+     }
 };
 
 void tensor_set_val(Tensor* self, const size_t i, const size_t j, const double val){
@@ -229,7 +228,7 @@ Tensor* tensor_scalar_product(Tensor* self, const double scalar){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* source_node = self->get_node(self, i, j);
             ADNode* constant_node = node_new(scalar, 0, 0);
-            ADNode* resulting_node = source_node->multiply(source_node, constant_node);
+            ADNode* resulting_node = node_multiply(source_node, constant_node);
             result->set_node(result, resulting_node, i, j);
         }
     }
@@ -242,7 +241,7 @@ void tensor_scalar_product_inplace(Tensor* self, const double scalar){
                         
             ADNode* source_node = self->get_node(self, i, j);
             ADNode* constant_node = node_new(scalar, 0, 0);
-            ADNode* target_node = source_node->multiply(source_node, constant_node);
+            ADNode* target_node = node_multiply(source_node, constant_node);
             self->set_node(self, target_node, i, j);
         }
     }
@@ -270,7 +269,7 @@ Tensor* tensor_add(Tensor* self, Tensor* tensor){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* node_A = self->get_node(self, i, j);
             ADNode* node_B = tensor->get_node(tensor, i, j);
-            ADNode* resulting_node = node_A->add(node_A, node_B);
+            ADNode* resulting_node = node_add(node_A, node_B);
 
             result->set_node(result, resulting_node, i, j);
         }
@@ -280,16 +279,20 @@ Tensor* tensor_add(Tensor* self, Tensor* tensor){
 };
 
 void tensor_add_inplace(Tensor* self, Tensor* tensor){
+
+    if (self->n_rows != tensor->n_rows || self->n_cols != tensor->n_cols){
+        printf("Tensor dimensions do not match for addition.\n");
+        printf("self->n_rows: %lu, tensor->n_rows: %lu\n", self->n_rows, tensor->n_rows);
+        printf("self->n_cols: %lu, tensor->n_cols: %lu\n", self->n_cols, tensor->n_cols);
+        exit(0);
+    }
     
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
             ADNode* node_A = self->get_node(self, i, j);
-            printf("Node A: %f\n", node_A->get_val(node_A));
             ADNode* node_B = tensor->get_node(tensor, i, j);
-            
-            ADNode* resulting_node = node_A->add(node_A, node_B);
+            ADNode* resulting_node = node_add(node_A, node_B);
             self->set_node(self, resulting_node, i, j);
-
         }
     }
 };
@@ -346,7 +349,7 @@ void tensor_subtract_inplace(Tensor* self, Tensor* tensor){
             ADNode* node_A = self->get_node(self, i, j);
             ADNode* node_B = tensor->get_node(tensor, i, j);
             
-            ADNode* resulting_node = node_A->subtract(node_A, node_B);
+            ADNode* resulting_node = node_subtract(node_A, node_B);
             self->set_node(self, resulting_node, i, j);
         }
     }
@@ -356,6 +359,10 @@ void tensor_subtract_inplace(Tensor* self, Tensor* tensor){
 void tensor_print_val(Tensor* self){
     for(size_t i = 0; i < self->n_rows; i++){
         for(size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            if (node == NULL){
+                printf("NULL ");
+            }
             const double val = self->get_val(self, i, j);
             printf("%f ", val);
         }
@@ -415,8 +422,8 @@ Tensor* tensor_dot_product(Tensor* self, Tensor* tensor){
     return result;  
 };
 
-void tensor_dot_product_inplace(Tensor** self, Tensor* tensor){
-    if (*self == NULL){
+void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
+    if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
     }
@@ -426,49 +433,40 @@ void tensor_dot_product_inplace(Tensor** self, Tensor* tensor){
         return;
     }
 
-    if ((*self)->n_cols != tensor->n_rows){
+    if ((self)->n_cols != tensor->n_rows){
         printf("Tensor dimensions do not match for multiplication.\n");
         exit(0);
     }
 
-    printf("Reallocating memory.\n");
-    Tensor* tmp = (*self)->copy(*self);
+    Tensor* tmp = (self)->copy(self);
     
     // reallocate_memory
-    (*self)->realloc(*self, (*self)->n_rows, tensor->n_cols);
+    self->realloc(self, self->n_rows, tensor->n_cols);
 
-    tensor->print_val(tensor);  
-
-    printf("Performing dot product.\n");
     for (size_t i = 0; i < tmp->n_rows; i++){
         for (size_t j = 0; j < tensor->n_cols; j++){
-            ADNode* result_node = node_new(0.0, (*self)->n_cols, 0);
+            ADNode* result_node = node_new(0.0, self->n_cols, 0);
 
             for (size_t k = 0; k < tmp->n_cols; k++){
-                printf("Iteration %lu %lu %lu\n", i,j,k);
                 ADNode* self_node = tmp->get_node(tmp, i, k);
-                printf("Self node: %f\n", self_node->get_val(self_node));
                 ADNode* tensor_node = tensor->get_node(tensor, k, j);
-                printf("Tensor node: %f\n", tensor_node->get_val(tensor_node));
                 ADNode* product_node = node_multiply(self_node, tensor_node);
-                printf("Product node: %f\n", product_node->get_val(product_node));
                 result_node->set_parent(result_node, product_node, k);
                 result_node->data.value += product_node->get_val(result_node);
-                printf("Parent set at iteration %lu %lu %lu\n", i,j,k); 
             }
 
             // Set backward
             result_node->backward = backward_add;
 
             // set the resulting node
-            (*self)->set_node(*self, result_node, i, j); 
+            self->set_node(self, result_node, i, j); 
         }
     }
-
     
 };
 
-void tensor_dot_product_inplace_reversed_order(Tensor* self, Tensor* tensor){
+void tensor_dot_product_reversed_order_inplace(Tensor* self, Tensor* tensor){
+    
     if (self == NULL){
         printf("Tensor a is pointing to an empty address\n.");
         return;
@@ -480,35 +478,40 @@ void tensor_dot_product_inplace_reversed_order(Tensor* self, Tensor* tensor){
     }
 
 
-    // swap tensors
-    Tensor* tmp = self;
-    self = tensor;
-    tensor = tmp;
-
-
-    if (self->n_cols != tensor->n_rows){
-        printf("Tensor dimensions do not match for multiplication.\n");
+    if (tensor->n_cols != self->n_rows){
+        printf("Tensor dimensions do not match for dot product.\n");
         exit(0);
     }
 
-    printf("Reallocating memory.\n");
-    // reallocate_memory
-    if (self->n_cols != tensor->n_cols){
-        self->realloc(self, self->n_rows, tensor->n_cols);
+    // Copy self
+    Tensor* tmp = self->copy(self);
+
+    // Free nodes in self
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            node->destroy(node);
+            node = NULL;
+            self->set_node(self, node, i, j);
+        }
     }
 
-    printf("Performing dot product.\n"); 
-    for (size_t i = 0; i < self->n_rows; i++){
-        for (size_t j = 0; j < tensor->n_cols; j++){
-            ADNode* result_node = node_new(0.0, self->n_cols, 0);
+    // reallocate_memory
+    // tensor n_rows, self n_cols
+    if (self->n_rows != tensor->n_rows){
+        self->realloc(self, tensor->n_rows, self->n_cols);
+    }
 
-            for (size_t k = 0; k < self->n_cols; k++){
-                ADNode* self_node = self->get_node(self, i, k);
-                ADNode* tensor_node = tensor->get_node(tensor, k, j);
+    for (size_t i = 0; i < tensor->n_rows; i++){
+        for (size_t j = 0; j < tmp->n_cols; j++){
+            ADNode* result_node = node_new(0.0, tensor->n_cols, 0);
 
-                ADNode* product_node = node_multiply(self_node, tensor_node);
+            for (size_t k = 0; k < tensor->n_cols; k++){
+                ADNode* tensor_node = tensor->get_node(tensor, i, k);
+                ADNode* self_node = tmp->get_node(tmp, k, j);
+                ADNode* product_node = node_multiply(tensor_node, self_node);
+
                 result_node->set_parent(result_node, product_node, k);
-                
                 result_node->data.value += product_node->get_val(result_node);
             }
 
@@ -517,8 +520,11 @@ void tensor_dot_product_inplace_reversed_order(Tensor* self, Tensor* tensor){
 
             // set the resulting node
             self->set_node(self, result_node, i, j); 
+
         }
     }
+
+    tmp->detach(tmp);
 };
 
 Tensor* tensor_copy(Tensor* self){
@@ -539,13 +545,18 @@ Tensor* tensor_copy(Tensor* self){
 
     ADNode* node = NULL;
     ADNode* new_node = NULL;
+    ADNode* tensor_node = NULL;
     
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
             node = self->get_node(self, i, j);
             new_node = node->copy(node);
-            ADNode* tensor_node = tensor->get_node(tensor, i, j);
+
             // TODO FREE ONLY INITIALIZED NODES
+            tensor_node = tensor->get_node(tensor, i, j);
+            tensor_node->destroy(tensor_node);
+            
+            // Set the new node
             tensor->set_node(tensor, new_node, i, j);
         }
     }
@@ -620,8 +631,9 @@ void tensor_relu_inplace(Tensor* self){
                 n = node;
             } 
             else {
-                n = node_new(0.0, 1, 0);
+                n = node_multiply(node, node_new(0.0, 0, 0));
             }
+
             self->set_node(self, n, i, j);
         }
     }
@@ -762,6 +774,9 @@ Tensor* tensor_create_from_array(const size_t n_rows, const size_t n_cols, const
     
     for (size_t i = 0; i < n_rows; i++){
         for (size_t j = 0; j < n_cols; j++){ 
+            // Get and Destroy the tensor node
+            ADNode* tensor_node = tensor->get_node(tensor, i, j);
+            tensor_node->destroy(tensor_node);
             ADNode* node = node_new(arr[i][j], 0, 0);
             tensor->set_node(tensor, node, i, j);
         }
