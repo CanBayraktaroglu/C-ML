@@ -72,6 +72,53 @@ void dfs_sort(ADNode* node, ADNode** sorted, size_t* idx){
     sorted[node->topology_idx] = node;
 };
 
+void bfs_sort(ADNode* node, ADNode** sorted, size_t* idx){
+    if (node == NULL) return;
+
+    // Create a queue for BFS
+    ADNode** queue = (ADNode**)malloc(node->num_parents * sizeof(ADNode*));
+    size_t front = 0, rear = 0;
+
+    // Enqueue the starting node
+    queue[rear++] = node;
+    node->visited = 1;
+
+    while (front < rear) {
+        ADNode* current = queue[front++];
+        current->topology_idx = (*idx)--;
+        sorted[current->topology_idx] = current;
+
+        // Enqueue all unvisited parents
+        for (size_t i = 0; i < current->num_parents; i++) {
+            if (!current->parents[i]->visited) {
+                queue[rear++] = current->parents[i];
+                current->parents[i]->visited = 1;
+            }
+        }
+    }
+
+    free(queue);
+}
+
+void graph_topological_sort(ComputeGraph* graph){
+    ADNode** sorted = (ADNode**)malloc(graph->num_nodes * sizeof(ADNode*));
+    size_t idx = graph->num_nodes - 1;
+
+    // Set all nodes as unvisited
+    for (size_t i = 0; i < graph->num_nodes; i++){
+        graph->nodes[i]->visited = 0;
+    }
+
+    // Traverse and add nodes to corresponding places in sorted array
+    for (size_t i = 0; i < graph->num_nodes; i++){
+        if (!graph->nodes[i]->visited) bfs_sort(graph->nodes[i], sorted, &idx);
+    }
+
+    // Replace the original array with the sorted one
+    free(graph->nodes);
+    graph->nodes = sorted;
+}
+
 void dfs_explore(ComputeGraph* graph, ADNode* node){
     if (graph == NULL) return;
     if (node == NULL || node->visited) return;
@@ -85,6 +132,41 @@ void dfs_explore(ComputeGraph* graph, ADNode* node){
 
 };
 
+void bfs_explore(ComputeGraph* graph, ADNode* node){
+    if (graph == NULL) return;
+    if (node == NULL) return;
+
+    // Create a queue for BFS
+    ADNode** queue = (ADNode**)malloc(node->num_parents * sizeof(ADNode*));
+    size_t front = 0, rear = 0;
+    size_t capacity = 10;
+
+    // Enqueue the starting node
+    queue[rear++] = node;
+    node->visited = 1;
+
+    while (front < rear) {
+        ADNode* current = queue[front++];
+        queue[front - 1] = NULL;
+        add_node_to_graph(graph, current);   
+
+        // Enqueue all unvisited parents
+        for (size_t i = 0; i < current->num_parents; i++) {
+            if (!current->parents[i]->visited) {
+                if (rear >= capacity){
+                    capacity *= 2;
+                    queue = (ADNode**)realloc(queue, capacity * sizeof(ADNode*));
+                }
+                
+                queue[rear++] = current->parents[i];
+                current->parents[i]->visited = 1;
+            }
+        }
+    }
+
+    free(queue);
+}	
+
 void dfs_backward(ADNode* node){
     if (node == NULL || node->visited) return;
     node->visited = 1;
@@ -96,27 +178,39 @@ void dfs_backward(ADNode* node){
 
 };
 
-void graph_topological_sort(ComputeGraph* graph){
-    ADNode** sorted = (ADNode**)malloc(graph->num_nodes * sizeof(ADNode*));
-    size_t idx = graph->num_nodes - 1;
+void bfs_backward(ComputeGraph* graph, ADNode* node){
+    if(node == NULL) return;
 
-    // Set all nodes as unvisited
-    for (size_t i = 0; i < graph->num_nodes; i++){
-        graph->nodes[i]->visited = 0;
+    // Create a queue for BFS
+    // *INEFFICIENT SOLUTION w.r.t heap memory complexity*
+    ADNode** queue = (ADNode**)malloc(graph->num_nodes * sizeof(ADNode*));
+    size_t front = 0, rear = 0;
+
+    // Enqueue the starting node
+    if (node->backward) node->backward(node);
+    queue[rear++] = node;
+    node->visited = 1;
+
+    while (front < rear) {
+        ADNode* current = queue[front++];
+        // Enqueue all unvisited parents
+        for (size_t i = 0; i < current->num_parents; i++) {
+            if (!current->parents[i]->visited) {
+                queue[rear++] = current->parents[i];
+                current->parents[i]->visited = 1;
+                if (current->parents[i]->backward) current->parents[i]->backward(current->parents[i]);
+            }
+        }
     }
 
-    // Traverse and add nodes to corresponding places in sorted array
-    for (size_t i = 0; graph->num_nodes; i++){
-        if (!graph->nodes[i]->visited) dfs_sort(graph->nodes[i], sorted, &idx);
-    }
+    free(queue);   
 
-    // Replace the original array with the sorted one
-    free(graph->nodes);
-    graph->nodes = sorted;
 };
 
 void graph_propagate_back(ComputeGraph* self){
-
+    // BFS more memory-effficient for skewed tree
+    // DFS more memory-efficient for balanced tree
+    // runtime complexity same for both O(V + E)
     // Set gradient of the output Node to 1
     self->head->data.grad = 1.0;
 
@@ -126,7 +220,7 @@ void graph_propagate_back(ComputeGraph* self){
     }
 
     // Traverse graph and propagate back
-    dfs_backward(self->head);
+    bfs_backward(self, self->head);
     
 };
 
@@ -151,6 +245,7 @@ void graph_build(ComputeGraph* graph, ADNode* output){
 
     // Traverse graph of nodes
     dfs_explore(graph, graph->head);
+
 };      
 
 ComputeGraph* compute_graph_new(){
@@ -158,6 +253,7 @@ ComputeGraph* compute_graph_new(){
     graph->capacity = 10; // start with space for 10 Nodes
     graph->nodes = (ADNode**)malloc(graph->capacity * sizeof(ComputeGraph*));
     graph->num_nodes = 0;
+    graph->self = graph;
 
     // Set methods
     graph->add_node = add_node_to_graph;

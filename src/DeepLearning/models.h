@@ -14,12 +14,14 @@
 
 typedef struct Sequential_NN{
     size_t num_layers;
+    size_t num_params;
     Layer** layers;
 }Sequential_NN;
 
 Sequential_NN* init_sequential_nn(){
     Sequential_NN* model = (Sequential_NN*)malloc(sizeof(Sequential_NN));
     model->num_layers = 0;
+    model->num_params = 0;
     model->layers = NULL;
     return model;
 };
@@ -32,6 +34,7 @@ void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t inp
     
     // Increment number of layers
     model->num_layers++;
+    model->num_params += output_size * input_size + output_size;
 
     if (model->layers == NULL){
         model->layers = (Layer**)malloc(sizeof(Layer*));
@@ -73,6 +76,46 @@ void print_sequential_nn(Sequential_NN* model){
                 break;
         }
         printf("\n");
+    }
+};
+
+void sequential_nn_print_params(Sequential_NN* model){
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        switch(layer->type){
+            case FEED_FORWARD:
+                printf("--------------------\n");
+                printf("Layer %lu\n", i);
+                printf("Weights:\n");
+                tensor_print_val(layer->layer.ff_layer->weights);
+                printf("Biases:\n");
+                tensor_print_val(layer->layer.ff_layer->biases);
+                printf("--------------------\n");
+                break;
+            default:
+                printf("Layer type not supported.\n");
+                break;
+        }
+    }
+};
+
+void sequential_nn_print_grads(Sequential_NN* model){
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        switch(layer->type){
+            case FEED_FORWARD:
+                printf("--------------------\n");
+                printf("Layer %lu\n", i);
+                printf("Weights:\n");
+                tensor_print_grad(layer->layer.ff_layer->weights);
+                printf("Biases:\n");
+                tensor_print_grad(layer->layer.ff_layer->biases);
+                printf("--------------------\n");
+                break;
+            default:
+                printf("Layer type not supported.\n");
+                break;
+        }
     }
 };
 
