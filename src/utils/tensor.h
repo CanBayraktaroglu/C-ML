@@ -371,7 +371,7 @@ void tensor_print_val(Tensor* self){
                 printf("NULL ");
             }
             const double val = self->get_val(self, i, j);
-            printf("%f ", val);
+            printf("    %f ", val);
         }
         printf("\n");
     }
@@ -381,7 +381,7 @@ void tensor_print_grad(Tensor* self){
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < self->n_cols; j++){
             const double grad = self->get_grad(self, i, j);
-            printf("%f ", grad);  
+            printf("    %f ", grad);  
         }
         printf("\n");
     }

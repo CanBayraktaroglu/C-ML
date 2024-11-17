@@ -213,7 +213,6 @@ void graph_propagate_back(ComputeGraph* self){
     // runtime complexity same for both O(V + E)
     // Set gradient of the output Node to 1
     self->head->data.grad = 1.0;
-    printf("Head: %f\n", self->head->data.value);
 
     // Set all nodes to unvisited
     for (size_t i = 0; i < self->num_nodes; i++){

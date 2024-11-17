@@ -140,6 +140,7 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer** layers){
                                 tensor_set_val(optimizer->v_w_ptr[i], j, k, v_t);
 
                                 v_dach_t = v_t/(1 - pow(optimizer->beta_2, t));
+                        
                         // update the corresponding weight W[j][k] of the Layer i of the model
                             w_j_k_t = tensor_get_val(ff_layer_ptr->weights, j, k);
                             w_j_k_opt = w_j_k_t - m_dach_t * (optimizer->alpha / sqrt(v_dach_t + optimizer->epsilon));
@@ -173,10 +174,10 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer** layers){
                             tensor_set_val(ff_layer_ptr->biases, j, 0, b_j_opt);
                 }
             }
-            printf("Optimization done for Layer %lu\n", i);
+            /* printf("Optimization done for Layer %lu\n", i);
             tensor_print_val(layer_ptr->layer.ff_layer->weights);
             printf("--------------------\n");
-            tensor_print_val(layer_ptr->layer.ff_layer->biases);
+            tensor_print_val(layer_ptr->layer.ff_layer->biases); */
         };
 };
 
