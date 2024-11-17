@@ -208,7 +208,9 @@ void bfs_backward(ComputeGraph* graph, ADNode* node){
 };
 
 void graph_propagate_back(ComputeGraph* self){
-
+    // BFS more memory-effficient for skewed tree
+    // DFS more memory-efficient for balanced tree
+    // runtime complexity same for both O(V + E)
     // Set gradient of the output Node to 1
     self->head->data.grad = 1.0;
     printf("Head: %f\n", self->head->data.value);
