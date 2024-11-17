@@ -7,7 +7,6 @@
 #include "matrix.h"
 #include <math.h>
 #include <assert.h>
-#include "act_fn..h"
 #include "layers.h"
 #include "loss.h"
 
@@ -67,7 +66,7 @@ void destroy_sequential_nn(Sequential_NN* model_ptr){
         
         switch(layer_ptr->type){
             case FEED_FORWARD:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 destroy_feed_forward_layer(ff_layer_ptr);
                 free(ff_layer_ptr);
                 ff_layer_ptr = NULL;
@@ -98,14 +97,14 @@ void add_feed_forward_layer(Sequential_NN* model_ptr, size_t output_size, size_t
 
     // Initialize feed forward neural layer
     (model_ptr->layers + model_ptr->num_layers - 1)->type = FEED_FORWARD;
-    (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
-    FeedForwardLayer* layer_ptr = (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer;
+    (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer = (FeedForwardLayer_*)malloc(sizeof(FeedForwardLayer_));
+    FeedForwardLayer_* layer_ptr = (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer;
     
     if (layer_ptr == NULL){
         printf("Layer ptr points to NULL.\n Feed forward layer cannot be added.\n");
         exit(0);
     } 
-    init_feed_forward_layer(&layer_ptr, output_size, input_size, act_fn_mapping);
+    init_feed_forward_layer_(&layer_ptr, output_size, input_size, act_fn_mapping);
 };
 
 void print_sequential_nn(Sequential_NN* model_ptr){
@@ -133,7 +132,7 @@ void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
         Layer* layer_ptr = (model_ptr->layers + i);
         switch (layer_ptr->type){
             case FEED_FORWARD:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 feed_forward_pass(ff_layer_ptr, x);
                 break;
             default:
@@ -161,7 +160,7 @@ void backpropagate_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y,
         Layer* layer_ptr = model->layers + i;
         switch(layer_ptr->type){
             case FEED_FORWARD:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
 
                 // Calculate Gradients
                 backprop_feed_forward_layer(ff_layer_ptr, delta_grad_next);

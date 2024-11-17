@@ -85,7 +85,7 @@ void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const
 
         switch(layer_ptr->type){
             case FEED_FORWARD:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 
                 //set rows and cols
                 ((*optimizer_dptr)->m_w_ptr + i)->data = (double*)calloc(ff_layer_ptr->grad_W->n_rows * ff_layer_ptr->grad_W->n_cols, sizeof(double));
@@ -125,7 +125,7 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
         Layer* layer_ptr = layers + i;
         switch(layer_ptr->type){
             case 0:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 for (size_t j = 0; j < ff_layer_ptr->grad_W->n_rows; j++){
                     for (size_t k =0; k < ff_layer_ptr->grad_W->n_cols; k++){
                         // Weights                       

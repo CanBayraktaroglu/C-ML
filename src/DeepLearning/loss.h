@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "matrix.h"
 #include <math.h>
+#include "tensor.h"
 
 
 #pragma region Loss Functions

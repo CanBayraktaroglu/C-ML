@@ -3,16 +3,15 @@
 
 #include <stdlib.h>	
 #include <string.h>
-#include "utils.h"
 #include "matrix.h"
+#include "./act_fn..h"
 #include <math.h>
-#include "act_fn..h"
 
 #pragma region Feed Forward Layer 
 
 // FEED FORWARD Layer
-typedef struct FeedForwardLayer{
-    struct FeedForwardLayer* self;
+typedef struct FeedForwardLayer_{
+    struct FeedForwardLayer_* self;
     size_t next_num_neurons;
     size_t num_neurons;
     void (*act_fn)(Matrix* X);
@@ -24,7 +23,7 @@ typedef struct FeedForwardLayer{
     Matrix* grad_delta;
     Matrix* grad_W;
     Matrix* grad_b;
-}FeedForwardLayer;
+}FeedForwardLayer_;
 
 typedef enum {
     FEED_FORWARD,
@@ -33,7 +32,7 @@ typedef enum {
 }LayerType;
 
 typedef union {
-    FeedForwardLayer* ff_layer;
+    FeedForwardLayer_* ff_layer;
     void* layer;
 }LayerUnion;
 
@@ -42,7 +41,10 @@ typedef struct {
     LayerUnion layer;
 }Layer;
 
-void set_da_dz_feed_forward_layer(FeedForwardLayer* layer, Matrix* z){
+// Feed Forward Layer
+
+
+void set_da_dz_feed_forward_layer(FeedForwardLayer_* layer, Matrix* z){
     // In the backpropagation method the upcoming gradients must be considered for the 
     // calculation of delta_L too
 
@@ -86,7 +88,7 @@ void set_da_dz_feed_forward_layer(FeedForwardLayer* layer, Matrix* z){
 };
 
 // Feed Forward Pass
-void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
+void feed_forward_pass(FeedForwardLayer_* layer, Matrix* X){
     layer->a_prev = matrix_copy(X);
     Matrix* _X = matrix_copy(X);
     Matrix* W = matrix_copy(layer->weights);
@@ -112,7 +114,9 @@ void feed_forward_pass(FeedForwardLayer* layer, Matrix* X){
   
 };
 
-void backprop_feed_forward_layer(FeedForwardLayer* layer, Matrix* delta_grad_next){ 
+
+
+void backprop_feed_forward_layer(FeedForwardLayer_* layer, Matrix* delta_grad_next){ 
     double delta_grad_j = 0.0;
     double delta_grad_val = 0.0;
     double da_dz_k = 0.0;
@@ -153,7 +157,7 @@ void backprop_feed_forward_layer(FeedForwardLayer* layer, Matrix* delta_grad_nex
 
 
 // Garbage Collector Funcs
-void destroy_feed_forward_layer(FeedForwardLayer* layer){
+void destroy_feed_forward_layer(FeedForwardLayer_* layer){
     if (layer == NULL) return;
     
     matrix_destroy(layer->weights);
@@ -186,8 +190,8 @@ void destroy_feed_forward_layer(FeedForwardLayer* layer){
 };
 
 // Allocate memory for FFNN
-FeedForwardLayer* create_feed_forward_layer(size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
-    FeedForwardLayer* layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
+FeedForwardLayer_* create_feed_forward_layer(size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
+    FeedForwardLayer_* layer = (FeedForwardLayer_*)malloc(sizeof(FeedForwardLayer_));
 
     // set self
     layer->self = layer;
@@ -220,16 +224,16 @@ FeedForwardLayer* create_feed_forward_layer(size_t next_num_neurons, size_t num_
 
     switch(act_fn_mapping){
         case 0:
-            layer->act_fn = linear;
+            layer->act_fn = matrix_linear;
             break;
         case 1:
-            layer->act_fn = relu;
+            layer->act_fn = matrix_relu;
             break;
         case 2:
-            layer->act_fn = sigmoid;
+            layer->act_fn = matrix_sigmoid;
             break;
         case 3:
-            layer->act_fn = _tanh;
+            layer->act_fn = matrix_tanh;
             break;
         default:
             printf("Selected mapping for the activation function does not exist.\n");
@@ -239,7 +243,7 @@ FeedForwardLayer* create_feed_forward_layer(size_t next_num_neurons, size_t num_
     return layer;
 };
 
-void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
+void init_feed_forward_layer_(FeedForwardLayer_** layer_dptr, size_t next_num_neurons, size_t num_neurons, char act_fn_mapping){
     
     // Set the neuron numbers
     (*layer_dptr)->next_num_neurons = next_num_neurons;
@@ -284,13 +288,13 @@ void init_feed_forward_layer(FeedForwardLayer** layer_dptr, size_t next_num_neur
 
     switch(act_fn_mapping){
         case 0:
-            (*layer_dptr)->act_fn = relu;
+            (*layer_dptr)->act_fn = matrix_relu;
             break;
         case 1:
-            (*layer_dptr)->act_fn = sigmoid;
+            (*layer_dptr)->act_fn = matrix_sigmoid;
             break;
         case 2:
-            (*layer_dptr)->act_fn = _tanh;
+            (*layer_dptr)->act_fn = matrix_tanh;
             break;
         default:
             printf("Selected mapping for the activation function does not exist.\n");
