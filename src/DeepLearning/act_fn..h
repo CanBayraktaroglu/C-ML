@@ -3,16 +3,13 @@
 
 #include <stdlib.h>	
 #include <string.h>
-#include "utils.h"
 #include "matrix.h"
 #include <math.h>
-#include <assert.h>
-#include "tensor.h"
 
 #pragma region Activation Functions
 
 // ACTIVATION FUNCTIONS
-void relu(Matrix* X){
+void matrix_relu(Matrix* X){
     if (X->n_cols){        
         for (size_t i = 0; i < X->n_rows; i++){
             for (size_t j = 0; j < X->n_cols; j++){
@@ -25,7 +22,7 @@ void relu(Matrix* X){
 };
 
 
-void sigmoid(Matrix* X){
+void matrix_sigmoid(Matrix* X){
     if (X->n_cols){
   
         for (size_t i = 0; i < X->n_rows; i++){
@@ -37,7 +34,7 @@ void sigmoid(Matrix* X){
     }
 };
 
-void _tanh(Matrix* X){
+void matrix_tanh(Matrix* X){
     if (X->n_cols){
         for (size_t i = 0; i < X->n_rows; i++){
             for (size_t j = 0; j < X->n_cols; j++){
@@ -48,7 +45,7 @@ void _tanh(Matrix* X){
     }
 };
 
-void linear(Matrix* X){
+void matrix_linear(Matrix* X){
 };
 #pragma endregion Activation Functions
 

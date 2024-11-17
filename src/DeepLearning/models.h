@@ -7,25 +7,97 @@
 #include "matrix.h"
 #include <math.h>
 #include <assert.h>
-#include "act_fn..h"
 #include "layers.h"
 #include "loss.h"
 
-#pragma region Sequential Neural Network 
+
+
+typedef struct Sequential_NN{
+    size_t num_layers;
+    Layer** layers;
+}Sequential_NN;
+
+Sequential_NN* init_sequential_nn(){
+    Sequential_NN* model = (Sequential_NN*)malloc(sizeof(Sequential_NN));
+    model->num_layers = 0;
+    model->layers = NULL;
+    return model;
+};
+
+void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t input_size, void (*act_fn)(Tensor* X)){
+    if (model == NULL){
+        printf("Passed model pointer is NULL.\n");
+        exit(0);
+    }
+    
+    // Increment number of layers
+    model->num_layers++;
+
+    if (model->layers == NULL){
+        model->layers = (Layer**)malloc(sizeof(Layer*));
+    }else{
+        model->layers = (Layer**)realloc(model->layers, model->num_layers * sizeof(Layer*));
+    }
+
+    // Initialize feed forward neural layer
+    Layer* layer = init_layer(FEED_FORWARD, output_size, input_size, act_fn);
+    *(model->layers + model->num_layers - 1) = layer;
+};
+
+void destroy_sequential_nn(Sequential_NN* model){
+    if (model == NULL) return;
+    
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        layer->destroy(layer);
+        *(model->layers + i) = NULL;    
+    }    
+
+    free(model->layers);
+    model->layers = NULL;
+    free(model);
+
+};
+
+void print_sequential_nn(Sequential_NN* model){
+    printf("LAYERS:\n");
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        printf("    Idx: %lu ", i);
+        switch(layer->type){
+            case FEED_FORWARD:
+                printf("Type: FEED FORWARD, # out_neurons: %lu, # in_neurons: %lu", layer->num_neurons, layer->num_features);
+                break;
+            default:
+                printf("TYPE NOT SUPPORTED.");
+                break;
+        }
+        printf("\n");
+    }
+};
+
+void forward_sequential_nn(Sequential_NN* model, Tensor* X){
+    for (size_t i = 0; i < model->num_layers; i++){
+        Layer* layer = *(model->layers + i);
+        layer->forward(layer, X);
+    }
+};
+
+#pragma region Sequential Neural Network Layerswise 
 
 // Sequential NN
-typedef struct Sequential_NN{
-    struct Sequential_NN* self;
+typedef struct Sequential_NN_{
+    struct Sequential_NN_* self;
     size_t input_size;
     size_t hidden_size;
     size_t output_size;
     size_t num_layers;
-    Layer* layers;
-}Sequential_NN;
+    Layer_* layers;
+}Sequential_NN_;
 
 // Allocate memory on the heap for Sequential NN
-Sequential_NN* create_Sequential_NN(const size_t input_size, const size_t hidden_size, const size_t output_size, const size_t num_layers, const char layer_type, const char act_fn){
-    Sequential_NN* sequential_nn = (Sequential_NN*)calloc(1, sizeof(Sequential_NN));
+Sequential_NN_* create_Sequential_NN(const size_t input_size, const size_t hidden_size, const size_t output_size, const size_t num_layers, const char layer_type, const char act_fn){
+    Sequential_NN_* sequential_nn = (Sequential_NN_*)calloc(1, sizeof(Sequential_NN_));
 
     sequential_nn->self = sequential_nn;
     sequential_nn->input_size = input_size;
@@ -36,10 +108,10 @@ Sequential_NN* create_Sequential_NN(const size_t input_size, const size_t hidden
     return sequential_nn;
 };
 
-void init_sequential_nn(Sequential_NN** model, const size_t input_size, const size_t hidden_size, const size_t output_size) {
+void init_sequential_nn_(Sequential_NN_** model, const size_t input_size, const size_t hidden_size, const size_t output_size) {
     
-    *model = (Sequential_NN*)calloc(1, sizeof(Sequential_NN)); 
-    Sequential_NN* model_ptr = *model;
+    *model = (Sequential_NN_*)calloc(1, sizeof(Sequential_NN_)); 
+    Sequential_NN_* model_ptr = *model;
     
     if (*model == NULL) {
         printf("Failed to allocate memory for model\n");
@@ -59,16 +131,16 @@ void init_sequential_nn(Sequential_NN** model, const size_t input_size, const si
     printf("Sequential NN INITIALIZED.\n");
 };
 
-void destroy_sequential_nn(Sequential_NN* model_ptr){
+void destroy_sequential_nn_(Sequential_NN_* model_ptr){
     if (model_ptr == NULL) return;
     
     for (size_t i = 0; i < model_ptr->num_layers; i++){
-        Layer* layer_ptr = model_ptr->layers + i;
+        Layer_* layer_ptr = model_ptr->layers + i;
         
         switch(layer_ptr->type){
             case FEED_FORWARD:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
-                destroy_feed_forward_layer(ff_layer_ptr);
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                destroy_feed_forward_layer_(ff_layer_ptr);
                 free(ff_layer_ptr);
                 ff_layer_ptr = NULL;
                 break;
@@ -82,7 +154,7 @@ void destroy_sequential_nn(Sequential_NN* model_ptr){
     model_ptr->layers = NULL;
 };
 
-void add_feed_forward_layer(Sequential_NN* model_ptr, size_t output_size, size_t input_size, const char act_fn_mapping){
+void add_feed_forward_layer_(Sequential_NN_* model_ptr, size_t output_size, size_t input_size, const char act_fn_mapping){
     if (model_ptr == NULL){
         printf("Passed model pointer is NULL.\n");
         exit(0);
@@ -91,28 +163,28 @@ void add_feed_forward_layer(Sequential_NN* model_ptr, size_t output_size, size_t
     model_ptr->num_layers++;
 
     if (model_ptr->layers == NULL){
-        model_ptr->layers = (Layer*)malloc(sizeof(Layer));
+        model_ptr->layers = (Layer_*)malloc(sizeof(Layer_));
     }else{
-        model_ptr->layers = (Layer*)realloc(model_ptr->layers, model_ptr->num_layers * sizeof(Layer));
+        model_ptr->layers = (Layer_*)realloc(model_ptr->layers, model_ptr->num_layers * sizeof(Layer_));
     }
 
     // Initialize feed forward neural layer
     (model_ptr->layers + model_ptr->num_layers - 1)->type = FEED_FORWARD;
-    (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
-    FeedForwardLayer* layer_ptr = (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer;
+    (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer = (FeedForwardLayer_*)malloc(sizeof(FeedForwardLayer_));
+    FeedForwardLayer_* layer_ptr = (model_ptr->layers + model_ptr->num_layers - 1)->layer.ff_layer;
     
     if (layer_ptr == NULL){
         printf("Layer ptr points to NULL.\n Feed forward layer cannot be added.\n");
         exit(0);
     } 
-    init_feed_forward_layer(&layer_ptr, output_size, input_size, act_fn_mapping);
+    init_feed_forward_layer_(&layer_ptr, output_size, input_size, act_fn_mapping);
 };
 
-void print_sequential_nn(Sequential_NN* model_ptr){
+void print_sequential_nn_(Sequential_NN_* model_ptr){
     printf("LAYERS:\n");
     for (size_t i = 0; i < model_ptr->num_layers; i++){
         
-        Layer* layer_ptr = model_ptr->layers + i;
+        Layer_* layer_ptr = model_ptr->layers + i;
         printf("    Idx: %lu ", i);
         
         switch(layer_ptr->type){
@@ -128,12 +200,12 @@ void print_sequential_nn(Sequential_NN* model_ptr){
     }
 };
 
-void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
+void forward_sequential_nn_(Sequential_NN_* model_ptr, Matrix* x){
     for (size_t i = 0; i < model_ptr->num_layers; i++){
-        Layer* layer_ptr = (model_ptr->layers + i);
+        Layer_* layer_ptr = (model_ptr->layers + i);
         switch (layer_ptr->type){
             case FEED_FORWARD:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 feed_forward_pass(ff_layer_ptr, x);
                 break;
             default:
@@ -143,7 +215,7 @@ void forward_sequential_nn(Sequential_NN* model_ptr, Matrix* x){
     }
 };
 
-void backpropagate_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y, const char loss_fn){
+void backpropagate_sequential_nn_(Sequential_NN_* model, Matrix* a_out, Matrix* y, const char loss_fn){
     
     Matrix* dC_da_out = NULL;
     switch(loss_fn){
@@ -158,10 +230,10 @@ void backpropagate_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y,
     Matrix* delta_grad_next = dC_da_out;
 
     for (int i = model->num_layers - 1; i >= 0; i--){
-        Layer* layer_ptr = model->layers + i;
+        Layer_* layer_ptr = model->layers + i;
         switch(layer_ptr->type){
             case FEED_FORWARD:
-                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
 
                 // Calculate Gradients
                 backprop_feed_forward_layer(ff_layer_ptr, delta_grad_next);
@@ -176,13 +248,8 @@ void backpropagate_sequential_nn(Sequential_NN* model, Matrix* a_out, Matrix* y,
 
     matrix_destroy(dC_da_out);
     free(dC_da_out);
-
-
-
 };
 
 #pragma endregion Sequential Neural Network
-
-
 
 #endif // __DL_H__

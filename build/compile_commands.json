@@ -16,7 +16,7 @@
 },
 {
   "directory": "/home/cb/Projects/C-ML/build",
-  "command": "/usr/bin/gcc  -I/home/cb/Projects/C-ML/build/../src/utils -I/home/cb/Projects/C-ML/build/../src/DT -I/home/cb/Projects/C-ML/build/../src/regression/LR -I/home/cb/Projects/C-ML/build/../src/DeepLearning -g -std=gnu99 -o CMakeFiles/test.dir/home/cb/Projects/C-ML/src/DeepLearning/test.c.o -c /home/cb/Projects/C-ML/src/DeepLearning/test.c",
-  "file": "/home/cb/Projects/C-ML/src/DeepLearning/test.c"
+  "command": "/usr/bin/gcc  -I/home/cb/Projects/C-ML/build/../src/utils -I/home/cb/Projects/C-ML/build/../src/DT -I/home/cb/Projects/C-ML/build/../src/regression/LR -I/home/cb/Projects/C-ML/build/../src/DeepLearning -g -std=gnu99 -o CMakeFiles/test.dir/home/cb/Projects/C-ML/src/DeepLearning/tests/feed_forward_test.c.o -c /home/cb/Projects/C-ML/src/DeepLearning/tests/feed_forward_test.c",
+  "file": "/home/cb/Projects/C-ML/src/DeepLearning/tests/feed_forward_test.c"
 }
 ]

@@ -13,7 +13,7 @@ include_directories(../src/utils/ ../src/DT ../src/regression/LR ../src/DeepLear
 add_executable(knn ../src/KNN/knn.c)
 add_executable(dt ../src/DT/dt.c)
 add_executable(dl ../src/DeepLearning/dl.c)
-add_executable(test ../src/DeepLearning/test.c)
+add_executable(test ../src/DeepLearning/tests/feed_forward_test.c)
 
 # Link the libraries
 target_link_libraries(knn m ${YAML_LIBRARIES})

@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "matrix.h"
 #include <math.h>
+#include "tensor.h"
 
 
 #pragma region Loss Functions
@@ -43,8 +44,8 @@ Tensor* L2_loss_tensor(Tensor* prediction, Tensor* label){
     Tensor* diff = tensor_subtract(prediction, label); 
     Tensor* diff_T = diff->transpose(diff);
     Tensor* loss = tensor_dot_product(diff_T, diff);
-    diff->free(diff);
-    diff_T->free(diff_T);
+    diff->detach(diff);
+    diff_T->detach(diff_T);
     return loss;
 };
  

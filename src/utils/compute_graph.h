@@ -36,27 +36,26 @@ void add_node_to_graph(ComputeGraph* self, ADNode* node){
 
 void graph_prune(ComputeGraph* self){
     if (self){
-        for (size_t i=0; i < self->num_nodes; i++){
+        for (size_t i = 0; i < self->num_nodes; i++){
             ADNode* node = self->nodes[i];
             if (node->is_trainable) continue;
-
             node->destroy(node);
-
         }
-        
         free(self->nodes);
     }
 };
 
 void graph_destroy(ComputeGraph* self){
     if (self){
-        for (size_t i=0; i < self->num_nodes; i++){
+        for (size_t i = 0; i < self->num_nodes; i++){
             ADNode* node = self->nodes[i];
             node->destroy(node);
+            self->nodes[i] = NULL;
 
         }
         
         free(self->nodes);
+        self->nodes = NULL;
         free(self);
     }
 };
@@ -76,8 +75,9 @@ void dfs_sort(ADNode* node, ADNode** sorted, size_t* idx){
 void dfs_explore(ComputeGraph* graph, ADNode* node){
     if (graph == NULL) return;
     if (node == NULL || node->visited) return;
+    
     node->visited = 1;
-    graph->add_node(graph, node);
+    add_node_to_graph(graph, node);
 
     for (size_t i = 0; i < node->num_parents; i++){
         dfs_explore(graph, node->parents[i]);
@@ -153,7 +153,7 @@ void graph_build(ComputeGraph* graph, ADNode* output){
     dfs_explore(graph, graph->head);
 };      
 
-ComputeGraph* graph_new(){
+ComputeGraph* compute_graph_new(){
     ComputeGraph* graph = (ComputeGraph*)malloc(sizeof(ComputeGraph));
     graph->capacity = 10; // start with space for 10 Nodes
     graph->nodes = (ADNode**)malloc(graph->capacity * sizeof(ComputeGraph*));
