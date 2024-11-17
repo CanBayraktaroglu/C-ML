@@ -49,15 +49,14 @@ void main(void){
     printf("Printing gradients of A.\n");
     A->print_grad(A);
 
+    printf("Detaching tensors from nodes.\n");
+    A->detach(A);
+    B->detach(B);
+    C->detach(C);
+
+    loss->detach(loss);
+    D->detach(D);
+
     printf("Destroying graph.\n"); 
     compute_graph->destroy(compute_graph);
-
-    printf("Destroying tensors.\n");
-
-    A->free(A);
-    B->free(B);
-    C->free(C);
-
-    loss->free(loss);
-    D->free(D);
 };

@@ -6,8 +6,65 @@
 #include "matrix.h"
 #include "./act_fn..h"
 #include <math.h>
+#include "tensor.h"
 
-#pragma region Feed Forward Layer 
+typedef struct FeedForwardLayer{
+    // FeedFowardLayer = Weights + Biases + neuron operations of layer_i; 
+    // all in sequential order starting with Weights first 
+    /* W_i | B_i || Neuron Operations_i_j */
+
+    Tensor* weights;
+    Tensor* biases;
+    void (*act_fn)(Tensor* X);
+
+    // Methods
+    void (*forward)(struct FeedForwardLayer* layer, Tensor* X);
+    void (*destroy)(struct FeedForwardLayer* layer);
+
+}FeedForwardLayer;
+
+
+void feed_forward_layer_forward(FeedForwardLayer* layer, Tensor* X){
+    if (layer == NULL || X == NULL){
+        printf("Layer or X is pointing to NULL in feed_forward_layer_forward.\n");
+        return;    
+    }
+
+    tensor_dot_product_inplace_reversed_order(X, layer->weights);
+    tensor_add_inplace(X, layer->biases);
+    layer->act_fn(X);
+};
+
+void feed_forward_layer_destroy(FeedForwardLayer* layer){
+    if (layer == NULL){
+        printf("Layer is pointing to NULL in feed_forward_layer_destroy.\n");
+        return;
+    }
+
+    tensor_detach(layer->weights);
+    tensor_detach(layer->biases);
+    free(layer);
+};
+
+FeedForwardLayer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
+    
+    FeedForwardLayer* layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
+
+    if (layer == NULL){
+        printf("Layer is pointing to NULL in init_feed_forward_layer.\n");
+        return NULL;
+    }
+
+    layer->weights = tensor_new(n_neurons, n_features);
+    layer->biases = tensor_new(n_neurons, 1);
+    layer->act_fn = act_fn;
+    layer->forward = feed_forward_layer_forward;
+    layer->destroy = feed_forward_layer_destroy;
+
+    return layer;
+};
+
+#pragma region Feed Forward Layerwise
 
 // FEED FORWARD Layer
 typedef struct FeedForwardLayer_{
@@ -41,7 +98,6 @@ typedef struct {
     LayerUnion layer;
 }Layer;
 
-// Feed Forward Layer
 
 
 void set_da_dz_feed_forward_layer(FeedForwardLayer_* layer, Matrix* z){
@@ -114,8 +170,6 @@ void feed_forward_pass(FeedForwardLayer_* layer, Matrix* X){
   
 };
 
-
-
 void backprop_feed_forward_layer(FeedForwardLayer_* layer, Matrix* delta_grad_next){ 
     double delta_grad_j = 0.0;
     double delta_grad_val = 0.0;
@@ -155,9 +209,8 @@ void backprop_feed_forward_layer(FeedForwardLayer_* layer, Matrix* delta_grad_ne
 
 };
 
-
 // Garbage Collector Funcs
-void destroy_feed_forward_layer(FeedForwardLayer_* layer){
+void destroy_feed_forward_layer_(FeedForwardLayer_* layer){
     if (layer == NULL) return;
     
     matrix_destroy(layer->weights);
@@ -237,7 +290,7 @@ FeedForwardLayer_* create_feed_forward_layer(size_t next_num_neurons, size_t num
             break;
         default:
             printf("Selected mapping for the activation function does not exist.\n");
-            destroy_feed_forward_layer(layer);
+            destroy_feed_forward_layer_(layer);
             exit(0);
     };
     return layer;
@@ -302,6 +355,6 @@ void init_feed_forward_layer_(FeedForwardLayer_** layer_dptr, size_t next_num_ne
     };
 };
 
-#pragma endregion Feed Forward Layer
+#pragma endregion Feed Forward Layerwise
 
 #endif // LAYERS_H_

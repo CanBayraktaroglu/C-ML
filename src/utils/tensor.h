@@ -19,7 +19,7 @@ typedef struct Tensor{
         void (*realloc)(struct Tensor* self, const size_t n_rows, const size_t n_cols);
         void (*init)(struct Tensor* self);
         void (*destroy)(struct Tensor* self);
-        void (*free)(struct Tensor* self);
+        void (*detach)(struct Tensor* self);
         void (*print_val)(struct Tensor* self);
         void (*print_grad)(struct Tensor* self);
 
@@ -111,7 +111,7 @@ void tensor_destroy(Tensor* self){
 
 };
 
-void tensor_free(Tensor* self){
+void tensor_detach(Tensor* self){
     if (self){
         free(self->nodes);
         self->nodes = NULL;
@@ -451,6 +451,55 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
     }
 };
 
+void tensor_dot_product_inplace_reversed_order(Tensor* self, Tensor* tensor){
+    if (self == NULL){
+        printf("Tensor a is pointing to an empty address\n.");
+        return;
+    }
+
+    if (tensor == NULL){
+        printf("Tensor b is pointing to an empty address\n.");
+        return;
+    }
+
+    // swap tensors
+    Tensor* tmp = self;
+    self = tensor;
+    tensor = tmp;
+
+    if (self->n_cols != tensor->n_rows){
+        printf("Tensor dimensions do not match for multiplication.\n");
+        exit(0);
+    }
+
+    // reallocate_memory
+    if (self->n_cols != tensor->n_cols){
+        self->realloc(self, self->n_rows, tensor->n_cols);
+    }
+    
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < tensor->n_cols; j++){
+            ADNode* result_node = node_new(0.0, self->n_cols, 0);
+
+            for (size_t k = 0; k < self->n_cols; k++){
+                ADNode* self_node = self->get_node(self, i, k);
+                ADNode* tensor_node = tensor->get_node(tensor, k, j);
+
+                ADNode* product_node = node_multiply(self_node, tensor_node);
+                result_node->set_parent(result_node, product_node, k);
+                
+                result_node->data.value += product_node->get_val(result_node);
+            }
+
+            // Set backward
+            result_node->backward = backward_add;
+
+            // set the resulting node
+            self->set_node(self, result_node, i, j); 
+        }
+    }
+};
+
 Tensor* tensor_copy(Tensor* self){
 
     Tensor* tensor = (Tensor*)malloc(sizeof(Tensor));
@@ -691,7 +740,7 @@ void tensor_init(Tensor* self){
     self->print_grad = tensor_print_grad;
     
     self->realloc = tensor_realloc;
-    self->free = tensor_free;
+    self->detach = tensor_detach;
     self->destroy = tensor_destroy;
     self->copy = tensor_copy;
     self->transpose = tensor_transpose;

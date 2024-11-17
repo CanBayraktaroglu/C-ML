@@ -67,7 +67,7 @@ void destroy_sequential_nn(Sequential_NN* model_ptr){
         switch(layer_ptr->type){
             case FEED_FORWARD:
                 FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;
-                destroy_feed_forward_layer(ff_layer_ptr);
+                destroy_feed_forward_layer_(ff_layer_ptr);
                 free(ff_layer_ptr);
                 ff_layer_ptr = NULL;
                 break;
