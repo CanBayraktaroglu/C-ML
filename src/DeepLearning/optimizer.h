@@ -5,6 +5,7 @@
 #include "matrix.h"
 #include "layers.h"
 #include "string.h"
+#include "tensor.h"
 
 #pragma region Optimizer
 
@@ -48,6 +49,62 @@ The formulas used are:
         --> w_t+1 = w_t - m_dach_t*(alpha/sqrt(v_dach_t + epsilon))
 */
 
+typedef struct Adam_Optimizer{
+    double learning_rate;
+    double alpha;
+    double beta_1;
+    double beta_2;
+    double epsilon;
+    size_t num_layers;
+    Tensor** m_w_ptr;
+    Tensor** m_b_ptr;
+    Tensor** v_w_ptr;  
+    Tensor** v_b_ptr;
+}Adam_Optimizer;
+
+Adam_Optimizer* init_Adam_optimizer(const double lr, const double alpha, const double beta_1,  const double beta_2, const double epsilon, Layer* layers, const size_t num_layers){
+    Adam_Optimizer* optimizer = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
+    optimizer->learning_rate = lr;
+    optimizer->alpha = alpha;
+    optimizer->beta_1 = beta_1;
+    optimizer->beta_2 = beta_2;
+    optimizer->epsilon = epsilon;
+    optimizer->num_layers = num_layers;
+
+    // Allocate space for gradients for weights and biases in each layer
+    optimizer->m_w_ptr = (Tensor**)malloc(num_layers*sizeof(Tensor*));
+    optimizer->m_b_ptr = (Tensor**)malloc(num_layers*sizeof(Tensor*)); 
+    optimizer->v_w_ptr = (Tensor**)malloc(num_layers*sizeof(Tensor*));
+    optimizer->v_b_ptr = (Tensor**)malloc(num_layers*sizeof(Tensor*));
+    
+    // Initialize
+    for (size_t i = 0; i < num_layers; i++){
+        Layer* layer_ptr = layers + i;
+
+        switch(layer_ptr->type){
+            case FEED_FORWARD:
+                FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
+                
+                //set rows and cols
+                optimizer->m_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 0.0);  
+                optimizer->v_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 0.0);
+                optimizer->m_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols, 0.0);
+                optimizer->v_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols,  0.0);
+
+                break;
+
+            default:
+                printf("Provided layer type not supported.\n");
+                exit(0);     
+
+        }   
+    }
+
+    return optimizer;
+};
+
+// LAYERWISE ADAM OPTIMIZER
+
 typedef struct{
     double learning_rate;
     double alpha;
@@ -59,11 +116,11 @@ typedef struct{
     Matrix* m_b_ptr;
     Matrix* v_w_ptr;  
     Matrix* v_b_ptr;
-}Adam_Optimizer;
+}Adam_Optimizer_;
 
-void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const double alpha, const double beta_1,  const double beta_2, const double epsilon, Layer_* layers, const size_t num_layers){
+void init_Adam_optimizer_(Adam_Optimizer_** optimizer_dptr, const double lr, const double alpha, const double beta_1,  const double beta_2, const double epsilon, Layer_* layers, const size_t num_layers){
     if (*optimizer_dptr == NULL){
-        *optimizer_dptr = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
+        *optimizer_dptr = (Adam_Optimizer_*)malloc(sizeof(Adam_Optimizer_)); 
     }
 
     (*optimizer_dptr)->learning_rate = lr;
@@ -115,7 +172,7 @@ void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const
 
 };
 
-void optimize_adam(Adam_Optimizer* optimizer, Layer_* layers){
+void optimize_adam(Adam_Optimizer_* optimizer, Layer_* layers){
     
     double m_t_prev, m_t, m_dach_t, v_t, v_t_prev;
     double grad_W_j_k_t, w_j_k_opt, v_dach_t, w_j_k_t;
@@ -187,7 +244,7 @@ void optimize_adam(Adam_Optimizer* optimizer, Layer_* layers){
     }   
 }
 
-void destroy_adam_optimizer(Adam_Optimizer* optimizer){
+void destroy_adam_optimizer_(Adam_Optimizer_* optimizer){
     if (optimizer == NULL) return;
     for (int i = optimizer->num_layers - 1; i >= 0; i--){
 

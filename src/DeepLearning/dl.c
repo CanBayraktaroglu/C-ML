@@ -33,9 +33,9 @@ void main(void){
         forward_sequential_nn_(sequential_nn, _X);
     
     // Optimizer
-        Adam_Optimizer* optimizer = NULL;
+        Adam_Optimizer_* optimizer = NULL;
         printf("INITIALIZE OPTIMIZER.\n");
-        init_Adam_optimizer(&optimizer, 0.004f, 0.5f, 0.9f, 0.9f, 0.000001f, sequential_nn->layers, sequential_nn->num_layers);
+        init_Adam_optimizer_(&optimizer, 0.004f, 0.5f, 0.9f, 0.9f, 0.000001f, sequential_nn->layers, sequential_nn->num_layers);
 
     // data
         double label[2][1] = {30, 20};
@@ -57,7 +57,7 @@ void main(void){
     // Free allocated dynamic memory
         destroy_sequential_nn_(sequential_nn);
         free(sequential_nn);
-        destroy_adam_optimizer(optimizer);
+        destroy_adam_optimizer_(optimizer);
         free(optimizer);        
         matrix_destroy(X);
         free(X);

@@ -28,9 +28,6 @@ void main(void){
     add_feed_forward_layer(model, 1, 3, tensor_relu_inplace);
     Layer* layer_1 = *(model->layers + 1);
 
-    // TODO:
-    // 1. blocks of N = num_neurons not freed
-
     printf("Printing Sequential NN\n");
     print_sequential_nn(model);
 
