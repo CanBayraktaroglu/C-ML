@@ -426,6 +426,7 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
     // reallocate_memory
     if (self->n_cols != tensor->n_cols){
         self->realloc(self, self->n_rows, tensor->n_cols);
+        self->n_cols = tensor->n_cols;
     }
     
     for (size_t i = 0; i < self->n_rows; i++){
@@ -462,21 +463,26 @@ void tensor_dot_product_inplace_reversed_order(Tensor* self, Tensor* tensor){
         return;
     }
 
+    printf("Self n_cols: %lu, Tensor n_rows: %lu\n", self->n_cols, tensor->n_rows);
+
     // swap tensors
     Tensor* tmp = self;
     self = tensor;
     tensor = tmp;
+    printf("Self n_cols: %lu, Tensor n_rows: %lu\n", self->n_cols, tensor->n_rows);
 
     if (self->n_cols != tensor->n_rows){
         printf("Tensor dimensions do not match for multiplication.\n");
         exit(0);
     }
 
+    printf("Reallocating memory.\n");
     // reallocate_memory
     if (self->n_cols != tensor->n_cols){
         self->realloc(self, self->n_rows, tensor->n_cols);
     }
-    
+
+    printf("Performing dot product.\n");
     for (size_t i = 0; i < self->n_rows; i++){
         for (size_t j = 0; j < tensor->n_cols; j++){
             ADNode* result_node = node_new(0.0, self->n_cols, 0);
@@ -588,6 +594,23 @@ Tensor* tensor_relu(Tensor* self){
         }
     }
     return result;    
+};
+
+void tensor_relu_inplace(Tensor* self){
+    ADNode* n = NULL;
+
+    for (size_t i = 0; i < self->n_rows; i++){
+        for (size_t j = 0; j < self->n_cols; j++){
+            ADNode* node = self->get_node(self, i, j);
+            if (node->get_val(node) >= 0){
+                n = node;
+            } 
+            else {
+                n = node_new(0.0, 1, 0);
+            }
+            self->set_node(self, n, i, j);
+        }
+    }
 };
 
 Tensor* tensor_sigmoid(Tensor* self){

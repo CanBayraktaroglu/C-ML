@@ -61,7 +61,7 @@ typedef struct{
     Matrix* v_b_ptr;
 }Adam_Optimizer;
 
-void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const double alpha, const double beta_1,  const double beta_2, const double epsilon, Layer* layers, const size_t num_layers){
+void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const double alpha, const double beta_1,  const double beta_2, const double epsilon, Layer_* layers, const size_t num_layers){
     if (*optimizer_dptr == NULL){
         *optimizer_dptr = (Adam_Optimizer*)malloc(sizeof(Adam_Optimizer)); 
     }
@@ -81,7 +81,7 @@ void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const
     
     // Initialize
     for (size_t i = 0; i < num_layers; i++){
-        Layer* layer_ptr = layers + i;
+        Layer_* layer_ptr = layers + i;
 
         switch(layer_ptr->type){
             case FEED_FORWARD:
@@ -115,14 +115,14 @@ void init_Adam_optimizer(Adam_Optimizer** optimizer_dptr, const double lr, const
 
 };
 
-void optimize_adam(Adam_Optimizer* optimizer, Layer* layers){
+void optimize_adam(Adam_Optimizer* optimizer, Layer_* layers){
     
     double m_t_prev, m_t, m_dach_t, v_t, v_t_prev;
     double grad_W_j_k_t, w_j_k_opt, v_dach_t, w_j_k_t;
     double grad_b_j_t, b_j_opt, b_j_t;
 
     for (size_t i = 0; i < optimizer->num_layers; i++){
-        Layer* layer_ptr = layers + i;
+        Layer_* layer_ptr = layers + i;
         switch(layer_ptr->type){
             case 0:
                 FeedForwardLayer_* ff_layer_ptr = layer_ptr->layer.ff_layer;

@@ -15,8 +15,8 @@ void main(void){
     
     Matrix* X = matrix_create_from_array(4, 1, arr);
     Matrix* _X = matrix_copy(X);
-    Sequential_NN* sequential_nn = NULL;
-    init_sequential_nn(&sequential_nn, 4, 3, 2);
+    Sequential_NN_* sequential_nn = NULL;
+    init_sequential_nn_(&sequential_nn, 4, 3, 2);
     
     if (sequential_nn == NULL){
         printf("Layers point to null address.\n");
@@ -24,13 +24,13 @@ void main(void){
     }
 
     // Stack layers on the sequential Model
-        add_feed_forward_layer(sequential_nn, sequential_nn->hidden_size, sequential_nn->input_size, 0);
-        add_feed_forward_layer(sequential_nn, sequential_nn->hidden_size, sequential_nn->hidden_size, 0);
-        add_feed_forward_layer(sequential_nn, sequential_nn->output_size, sequential_nn->hidden_size, 0);
-        print_sequential_nn(sequential_nn);
+        add_feed_forward_layer_(sequential_nn, sequential_nn->hidden_size, sequential_nn->input_size, 0);
+        add_feed_forward_layer_(sequential_nn, sequential_nn->hidden_size, sequential_nn->hidden_size, 0);
+        add_feed_forward_layer_(sequential_nn, sequential_nn->output_size, sequential_nn->hidden_size, 0);
+        print_sequential_nn_(sequential_nn);
 
     // Forward Pass 
-        forward_sequential_nn(sequential_nn, _X);
+        forward_sequential_nn_(sequential_nn, _X);
     
     // Optimizer
         Adam_Optimizer* optimizer = NULL;
@@ -48,14 +48,14 @@ void main(void){
 
     // Propagate back the gradients top-to-bottom 
         printf("BACKPROPAGATION.\n");
-        backpropagate_sequential_nn(sequential_nn, _X, y, 0);
+        backpropagate_sequential_nn_(sequential_nn, _X, y, 0);
 
     // Optimize
         printf("OPTIMIZATION.\n");
         optimize_adam(optimizer, sequential_nn->layers);
         
     // Free allocated dynamic memory
-        destroy_sequential_nn(sequential_nn);
+        destroy_sequential_nn_(sequential_nn);
         free(sequential_nn);
         destroy_adam_optimizer(optimizer);
         free(optimizer);        

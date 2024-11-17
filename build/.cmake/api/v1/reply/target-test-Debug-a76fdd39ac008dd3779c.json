@@ -137,7 +137,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "/home/cb/Projects/C-ML/src/DeepLearning/test.c",
+			"path" : "/home/cb/Projects/C-ML/src/DeepLearning/tests/feed_forward_test.c",
 			"sourceGroupIndex" : 0
 		}
 	],

@@ -8,6 +8,16 @@
 #include <math.h>
 #include "tensor.h"
 
+/**
+ * @file layers.h
+ * @brief Header file for defining the Layer structure in a deep learning context.
+ *
+ * This file contains the forward declaration of the Layer structure, which will be
+ * implemented later. The Layer structure is a fundamental component in building
+ * deep learning models.
+ */
+typedef struct Layer Layer;
+
 typedef struct FeedForwardLayer{
     // FeedFowardLayer = Weights + Biases + neuron operations of layer_i; 
     // all in sequential order starting with Weights first 
@@ -18,51 +28,100 @@ typedef struct FeedForwardLayer{
     void (*act_fn)(Tensor* X);
 
     // Methods
-    void (*forward)(struct FeedForwardLayer* layer, Tensor* X);
-    void (*destroy)(struct FeedForwardLayer* layer);
+    void (*forward)(struct Layer* layer, Tensor* X);
+    void (*destroy)(struct Layer* layer);
 
 }FeedForwardLayer;
 
+typedef union{
+    FeedForwardLayer* ff_layer;
+}LayerUnion;
+ 
+typedef enum {
+    FEED_FORWARD,
+    //add more types as needed}
+}LayerType;
 
-void feed_forward_layer_forward(FeedForwardLayer* layer, Tensor* X){
+struct Layer{
+    struct Layer* self;
+    LayerType type;
+    LayerUnion layer;
+    void (*forward)(struct Layer* layer, Tensor* X);
+    void (*destroy)(struct Layer* layer);
+};
+
+
+
+void feed_forward_layer_forward(Layer* layer, Tensor* X){
     if (layer == NULL || X == NULL){
         printf("Layer or X is pointing to NULL in feed_forward_layer_forward.\n");
         return;    
     }
-
-    tensor_dot_product_inplace_reversed_order(X, layer->weights);
-    tensor_add_inplace(X, layer->biases);
-    layer->act_fn(X);
+    printf("Forward Pass starting.\n");
+    FeedForwardLayer* ff_layer = layer->layer.ff_layer;
+    printf("Forward Pass initialized.\n");
+    printf("reversed dot product \n");
+    tensor_dot_product_inplace(X, ff_layer->weights);
+    printf("add in place\n");
+    tensor_add_inplace(X, ff_layer->biases);
+    
+    printf("Activation function\n");
+    ff_layer->act_fn(X);
 };
 
-void feed_forward_layer_destroy(FeedForwardLayer* layer){
+void feed_forward_layer_destroy(Layer* layer){
     if (layer == NULL){
         printf("Layer is pointing to NULL in feed_forward_layer_destroy.\n");
         return;
     }
+    FeedForwardLayer* ff_layer = layer->layer.ff_layer;
 
-    tensor_detach(layer->weights);
-    tensor_detach(layer->biases);
-    free(layer);
+    tensor_detach(ff_layer->weights);
+    tensor_detach(ff_layer->biases);
+    free(ff_layer);
 };
 
-FeedForwardLayer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
-    
-    FeedForwardLayer* layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
+Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
+    Layer* layer = (Layer*)malloc(sizeof(Layer));    
+    FeedForwardLayer* ff_layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
 
     if (layer == NULL){
         printf("Layer is pointing to NULL in init_feed_forward_layer.\n");
         return NULL;
-    }
+    };
 
-    layer->weights = tensor_new(n_neurons, n_features);
-    layer->biases = tensor_new(n_neurons, 1);
-    layer->act_fn = act_fn;
-    layer->forward = feed_forward_layer_forward;
-    layer->destroy = feed_forward_layer_destroy;
+    ff_layer->weights = tensor_new(n_neurons, n_features);
+    ff_layer->biases = tensor_new(n_neurons, 1);
+    ff_layer->act_fn = act_fn;
+    ff_layer->forward = feed_forward_layer_forward;
+    ff_layer->destroy = feed_forward_layer_destroy;
+
+    layer->self = layer;
+    layer->type = FEED_FORWARD;
+    layer->layer.ff_layer = ff_layer;
+    return layer;
+};
+
+
+Layer* init_layer(LayerType type, size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
+
+    Layer* layer;
+    switch(type){
+        case FEED_FORWARD:
+            layer = init_feed_forward_layer(n_neurons, n_features, act_fn);
+            layer->self = layer;
+            layer->type = FEED_FORWARD;
+            layer->forward = feed_forward_layer_forward;
+            layer->destroy = feed_forward_layer_destroy;
+            break;
+        default:
+            printf("Layer type not supported.\n");
+            return NULL;
+    }
 
     return layer;
 };
+
 
 #pragma region Feed Forward Layerwise
 
@@ -83,20 +142,19 @@ typedef struct FeedForwardLayer_{
 }FeedForwardLayer_;
 
 typedef enum {
-    FEED_FORWARD,
-    CONVOLUTIONAL,
+    FF,
     //add more types as needed
-}LayerType;
+}LayerType_;
 
 typedef union {
     FeedForwardLayer_* ff_layer;
     void* layer;
-}LayerUnion;
+}LayerUnion_;
 
 typedef struct {
-    LayerType type;
-    LayerUnion layer;
-}Layer;
+    LayerType_ type;
+    LayerUnion_ layer;
+}Layer_;
 
 
 
