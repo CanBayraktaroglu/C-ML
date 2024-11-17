@@ -53,7 +53,7 @@ void node_init(ADNode* self);
 ADNode* node_new(const double value, const size_t num_parents, char is_trainable){
     ADNode* node = (ADNode*)malloc(sizeof(ADNode));
     node->data.value = value;
-    node->data.grad = 0.0;
+     node->data.grad = 0.0;
     node->num_parents = num_parents;
     if (num_parents > 0) {
         node->parents = (ADNode**)malloc(num_parents * sizeof(ADNode*));
@@ -67,7 +67,6 @@ ADNode* node_new(const double value, const size_t num_parents, char is_trainable
     node->visited = 0;
     node->init = node_init;
     node->init(node);
-
     return node;
 };
 
@@ -90,7 +89,8 @@ ADNode* node_copy(ADNode* self){
     node->init(node);
 
     node->parents = (ADNode**)malloc(self->num_parents * sizeof(ADNode*));
-    if (*(node->parents) == NULL){
+    
+    if (node->parents == NULL){
         printf("Failed to allocate memory for AD Node parents.\n");
         exit(1);
     }

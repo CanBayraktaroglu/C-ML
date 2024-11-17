@@ -79,6 +79,12 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     tensor->init = tensor_init;
     tensor->init(tensor);
 
+    for (size_t i = 0; i < n_rows; i++){
+        for (size_t j = 0; j < n_cols; j++){
+            tensor->nodes[i * n_cols + j] = node_new(0.0, 0, 0);
+        }
+    }
+ 
     return tensor;
 };
 
@@ -347,7 +353,6 @@ void tensor_subtract_inplace(Tensor* self, Tensor* tensor){
 void tensor_print_val(Tensor* self){
     for(size_t i = 0; i < self->n_rows; i++){
         for(size_t j = 0; j < self->n_cols; j++){
-            printf("Getting value at row:%lu , col: %lu \n", i, j);
             const double val = self->get_val(self, i, j);
             printf("%f ", val);
         }
@@ -422,8 +427,6 @@ void tensor_dot_product_inplace(Tensor** self, Tensor* tensor){
         printf("Tensor dimensions do not match for multiplication.\n");
         exit(0);
     }
-    printf("Printing Tensor\n");
-    tensor->print_val(tensor);
     printf("Reallocating memory.\n");
     Tensor* tmp = (*self)->copy(*self);
     
@@ -538,8 +541,11 @@ Tensor* tensor_copy(Tensor* self){
             node = self->get_node(self, i, j);
             new_node = node->copy(node);
             tensor->set_node(tensor, new_node, i, j);
+            printf("Copying node: %f\n", node->get_val(node));
+            printf("Setting node: %f\n", tensor->get_val(tensor, i, j));
         }
     }
+
     return tensor;
 };
 
@@ -756,6 +762,7 @@ Tensor* tensor_create_from_array(const size_t n_rows, const size_t n_cols, const
             tensor->set_node(tensor, node, i, j);
         }
     }
+
 
     return tensor;
 }; 
