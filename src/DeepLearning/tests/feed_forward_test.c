@@ -6,6 +6,7 @@
 void main(void){
     // Initialize graph
     ComputeGraph* graph = compute_graph_new(); 
+
     // Initialize sequential model
     Sequential_NN* model = init_sequential_nn();
 
@@ -20,7 +21,16 @@ void main(void){
 
     printf("Initializing Feed Forward Layer.\n");
     //Layer* layer = init_layer(FEED_FORWARD, 1, 4, tensor_relu_inplace);
-    add_feed_forward_layer(model, 1, 4, tensor_relu_inplace);
+    add_feed_forward_layer(model, 2, 4, tensor_relu_inplace);
+    Layer* layer_0 = *(model->layers + 0);
+    add_feed_forward_layer(model, 1, 2, tensor_relu_inplace);
+    Layer* layer_1 = *(model->layers + 1);
+
+    // TODO:
+    // 1. blocks of N = num_neurons not freed
+
+    printf("Printing Sequential NN\n");
+    print_sequential_nn(model);
 
     printf("Forward Pass.\n");
     //layer->forward(layer, X);
@@ -37,7 +47,6 @@ void main(void){
 
     X->detach(X);
     destroy_sequential_nn(model);
-    printf("Num nodes in graph: %lu\n", graph->num_nodes);
     graph->destroy(graph);
 
 };

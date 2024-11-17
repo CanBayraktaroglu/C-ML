@@ -33,6 +33,7 @@ typedef struct FeedForwardLayer{
 
 }FeedForwardLayer;
 
+
 typedef union{
     FeedForwardLayer* ff_layer;
 }LayerUnion;
@@ -59,13 +60,8 @@ void feed_forward_layer_forward(Layer* layer, Tensor* X){
     }
     FeedForwardLayer* ff_layer = layer->layer.ff_layer;
     
-    printf("reversed dot product \n");
     tensor_dot_product_reversed_order_inplace(X, ff_layer->weights);
-
-    printf("add in place\n");
     tensor_add_inplace(X, ff_layer->biases); 
-    
-    printf("Activation function\n");
     ff_layer->act_fn(X);
 };
 
@@ -77,10 +73,31 @@ void feed_forward_layer_destroy(Layer* layer){
     FeedForwardLayer* ff_layer = layer->layer.ff_layer;
 
     tensor_detach(ff_layer->weights);
+    ff_layer->weights = NULL;
+
     tensor_detach(ff_layer->biases);
+    ff_layer->biases = NULL;
 
     free(ff_layer);
     free(layer);
+};
+
+void feed_forward_initialize_params_random(Tensor* tensor){
+    if (tensor == NULL){
+        printf("Tensor is pointing to NULL in initialize_learnable_params.\n");
+        return;
+    }
+
+    size_t num_rows = tensor->n_rows;
+    size_t num_cols = tensor->n_cols;
+
+    for (size_t i = 0; i < num_rows; i++){
+        for (size_t j = 0; j < num_cols; j++){
+            ADNode* node = tensor->get_node(tensor, i, j);
+            double val = (double)rand() / (double)RAND_MAX;
+            node->set_val(node, val);            
+        }
+    }
 };
 
 Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
@@ -92,15 +109,15 @@ Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_f
         return NULL;
     };
 
-    ff_layer->weights = tensor_new(n_neurons, n_features);
-    ff_layer->biases = tensor_new(n_neurons, 1);
+    ff_layer->weights = tensor_new_random(n_neurons, n_features);
+    ff_layer->biases = tensor_new_random(n_neurons, 1);
 
     // Set the nodes as trainable
     for(size_t i = 0; i < n_neurons; i++){
         for(size_t j = 0; j < n_features; j++){
-            ff_layer->weights->get_node(ff_layer->weights, i, j)->is_trainable = 1;
+            tensor_get_node(ff_layer->weights, i, j)->is_trainable = 1;
         }
-            ff_layer->biases->get_node(ff_layer->weights, i, 0)->is_trainable = 1;
+        tensor_get_node(ff_layer->biases, i, 0)->is_trainable = 1;  
     }
 
     ff_layer->act_fn = act_fn;
@@ -110,6 +127,7 @@ Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_f
     layer->self = layer;
     layer->num_features = n_features;
     layer->num_neurons = n_neurons;
+
     layer->type = FEED_FORWARD;
     layer->layer.ff_layer = ff_layer;
 

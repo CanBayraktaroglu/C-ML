@@ -29,6 +29,7 @@ void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t inp
         printf("Passed model pointer is NULL.\n");
         exit(0);
     }
+    
     // Increment number of layers
     model->num_layers++;
 
@@ -46,7 +47,8 @@ void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t inp
 void destroy_sequential_nn(Sequential_NN* model){
     if (model == NULL) return;
     
-    for (size_t i = 0; i < model->num_layers; i++){
+    for (int i = model->num_layers - 1; i >= 0; i--){
+        printf("Destroying layer %i \n", i);
         Layer* layer = *(model->layers + i);
         layer->destroy(layer);
     }    

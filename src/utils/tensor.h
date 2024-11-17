@@ -71,15 +71,32 @@ Tensor* tensor_new(const size_t n_rows, const size_t n_cols){
     tensor->init = tensor_init;
     tensor->init(tensor);
 
-    for(size_t i = 0; i < n_rows; i++){
-        for(size_t j = 0; j < n_cols; j++){
-            tensor->nodes[i * n_cols + j] = node_new(0.0, 0, 0);
-        }
-    };
+    
 
     return tensor;
 };
 
+Tensor* tensor_new_init(const size_t n_rows, const size_t n_cols, const double val){
+    Tensor* tensor = tensor_new(n_rows, n_cols);
+
+    for(size_t i = 0; i < n_rows; i++){
+        for(size_t j = 0; j < n_cols; j++){
+            tensor->nodes[i * n_cols + j] = node_new(val, 0, 0);
+        }
+    };
+    return tensor;
+};
+
+Tensor* tensor_new_random(const size_t n_rows, const size_t n_cols){
+    Tensor* tensor = tensor_new(n_rows, n_cols);
+    for (size_t i = 0; i < n_rows; i++){
+       for (size_t j = 0; j < n_cols; j++){
+            const double val = (double)rand() / (double)RAND_MAX;
+            tensor->nodes[i * n_cols + j] = node_new(val, 0, 0);
+        }
+    }
+    return tensor;
+};
 void tensor_realloc(Tensor* self, const size_t n_rows, const size_t n_cols){
     self->nodes = (ADNode**) realloc(self->nodes, n_rows * n_cols * sizeof(ADNode*));
     
@@ -278,6 +295,7 @@ Tensor* tensor_add(Tensor* self, Tensor* tensor){
     return result;
 };
 
+
 void tensor_add_inplace(Tensor* self, Tensor* tensor){
 
     if (self->n_rows != tensor->n_rows || self->n_cols != tensor->n_cols){
@@ -462,6 +480,7 @@ void tensor_dot_product_inplace(Tensor* self, Tensor* tensor){
             self->set_node(self, result_node, i, j); 
         }
     }
+    tmp->detach(tmp);
     
 };
 
@@ -512,9 +531,8 @@ void tensor_dot_product_reversed_order_inplace(Tensor* self, Tensor* tensor){
                 ADNode* product_node = node_multiply(tensor_node, self_node);
 
                 result_node->set_parent(result_node, product_node, k);
-                result_node->data.value += product_node->get_val(result_node);
+                result_node->data.value += product_node->get_val(product_node);
             }
-
             // Set backward
             result_node->backward = backward_add;
 
@@ -553,8 +571,8 @@ Tensor* tensor_copy(Tensor* self){
             new_node = node->copy(node);
 
             // TODO FREE ONLY INITIALIZED NODES
-            tensor_node = tensor->get_node(tensor, i, j);
-            tensor_node->destroy(tensor_node);
+            //tensor_node = tensor->get_node(tensor, i, j);
+            //tensor_node->destroy(tensor_node);
             
             // Set the new node
             tensor->set_node(tensor, new_node, i, j);
@@ -776,7 +794,7 @@ Tensor* tensor_create_from_array(const size_t n_rows, const size_t n_cols, const
         for (size_t j = 0; j < n_cols; j++){ 
             // Get and Destroy the tensor node
             ADNode* tensor_node = tensor->get_node(tensor, i, j);
-            tensor_node->destroy(tensor_node);
+            //tensor_node->destroy(tensor_node);
             ADNode* node = node_new(arr[i][j], 0, 0);
             tensor->set_node(tensor, node, i, j);
         }
@@ -785,7 +803,6 @@ Tensor* tensor_create_from_array(const size_t n_rows, const size_t n_cols, const
 
     return tensor;
 }; 
-
 
 void tensor_init(Tensor* self){
     // Set methods
