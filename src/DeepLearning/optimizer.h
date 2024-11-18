@@ -105,7 +105,7 @@ Adam_Optimizer* init_Adam_optimizer(const double lr, const double alpha, const d
     return optimizer;
 };
 
-void optimize_adam(Adam_Optimizer* optimizer, Layer** layers){
+void optimizer_step(Adam_Optimizer* optimizer, Layer** layers){
 
     double m_t_prev, m_t, m_dach_t, v_t, v_t_prev;
     double grad_W_j_k_t, w_j_k_opt, v_dach_t, w_j_k_t;

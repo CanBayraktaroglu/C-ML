@@ -9,8 +9,7 @@
 #include <assert.h>
 #include "layers.h"
 #include "loss.h"
-
-
+#include "compute_graph.h"  
 
 typedef struct Sequential_NN{
     size_t num_layers;
@@ -123,6 +122,60 @@ void forward_sequential_nn(Sequential_NN* model, Tensor* X){
     for (size_t i = 0; i < model->num_layers; i++){
         Layer* layer = *(model->layers + i);
         layer->forward(layer, X);
+    }
+};
+
+void sequential_nn_train(Sequential_NN* model, TensorDataset* dataset, ComputeGraph* graph,size_t epochs, Adam_Optimizer* optimizer){
+
+    if (model == NULL){
+        printf("Model is pointing to NULL.\n");
+        exit(0);
+    }
+
+    if (graph == NULL){
+        printf("Graph is pointing to NULL.\n");
+        exit(0);
+    }
+
+    if (optimizer == NULL){
+        printf("Optimizer is pointing to NULL.\n");
+        exit(0);
+    }
+
+    if (dataset == NULL){
+        printf("Dataset is pointing to NULL.\n");
+        exit(0);
+    }
+
+    assert(dataset->n_x == dataset->n_y);
+
+    
+    for (size_t epoch = 0; epoch < epochs; epoch++){
+        printf("Epoch: %lu\n", epoch);
+        for (size_t i = 0; i < dataset->n_x; i++){
+            
+            Tensor* X = tensor_dataset_get_X(dataset, i);
+            Tensor* _y = tensor_dataset_get_y(dataset, i);
+
+            Tensor* x = tensor_copy(X);
+            Tensor* y = tensor_copy(y);
+            printf("Forward Pass.\n");
+            forward_sequential_nn(model, x);
+            printf("--------------------\n");
+            tensor_print_val(X);
+            printf("--------------------\n");
+
+            Tensor* loss = L2_loss_tensor(X, y);
+            printf("Loss: %f\n", tensor_get_val(loss, 0, 0));
+
+            graph_build(graph, loss->get_node(loss, 0, 0));
+            graph_propagate_back(graph);
+
+            optimizer_step(optimizer, model->layers);
+
+            tensor_detach(loss);
+            graph_prune(graph);
+        }
     }
 };
 

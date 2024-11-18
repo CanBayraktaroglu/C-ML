@@ -814,4 +814,116 @@ void tensor_init(Tensor* self){
     self->log_inplace = tensor_log_inplace;
 
 };
+
+typedef struct TensorDataset{
+    size_t n_x;
+    size_t n_y;
+    size_t capacity;
+    Tensor** X_dptr;
+    Tensor** y_dptr;
+}TensorDataset;
+
+TensorDataset* tensor_dataset_new(const size_t capacity){
+    if (!capacity){
+        printf("Capacity provided for the Dataset must be greater than 0.\n");
+        exit(0);
+    }
+
+    TensorDataset* dataset = (TensorDataset*)malloc(sizeof(TensorDataset));
+    dataset->n_x = 0;
+    dataset->n_y = 0;
+    dataset->capacity = capacity;
+    dataset->X_dptr = (Tensor**)malloc(capacity * sizeof(Tensor*));
+    dataset->y_dptr = (Tensor**)malloc(capacity * sizeof(Tensor*));
+    return dataset;
+};
+
+
+void tensor_dataset_add_X(TensorDataset* dataset, Tensor* X){
+    if (dataset == NULL){
+        printf("Passed dataset pointer is NULL.\n");
+        exit(0);
+    }
+    
+    if (X == NULL){
+        printf("Passed tensor pointer is NULL.\n");
+    }
+
+    if (dataset->X_dptr == NULL){
+        dataset->X_dptr = (Tensor**)malloc(dataset->capacity * sizeof(Tensor*));
+    }else if (dataset->n_x >= dataset->capacity){
+        dataset->capacity *= 2;
+        dataset->X_dptr = (Tensor**)realloc(dataset->X_dptr, dataset->capacity * sizeof(Tensor*));
+    }
+    dataset->X_dptr[dataset->n_x++] = X;
+ };
+
+void tensor_dataset_add_y(TensorDataset* dataset, Tensor* y){
+    if (dataset == NULL){
+        printf("Passed dataset pointer is NULL.\n");
+        exit(0);
+    }
+    
+    if (y == NULL){
+        printf("Passed tensor pointer is NULL.\n");
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+
+    if (dataset->y_dptr == NULL){
+        dataset->y_dptr = (Tensor**)malloc(dataset->capacity * sizeof(Tensor*));
+    }else if(dataset->n_y >= dataset->capacity){
+        dataset->capacity *= 2;
+        dataset->y_dptr = (Tensor**)realloc(dataset->y_dptr, dataset->capacity * sizeof(Tensor*));
+    }
+
+    dataset->y_dptr[dataset->n_y++] = y;
+};
+
+Tensor* tensor_dataset_get_X(TensorDataset* dataset, const size_t i){
+    if (dataset == NULL){
+        printf("Passed dataset pointer is NULL.\n");
+        exit(0);
+    }
+
+    if (i >= dataset->n_x){
+        printf("Index out of bounds.\n");
+        exit(0);
+    }
+
+    return *(dataset->X_dptr + i);
+};
+
+Tensor* tensor_dataset_get_y(TensorDataset* dataset, const size_t i){
+    if (dataset == NULL){
+        printf("Passed dataset pointer is NULL.\n");
+        exit(0);
+    }
+
+    if (i >= dataset->n_y){
+        printf("Index out of bounds.\n");
+        exit(0);
+    }
+
+    return *(dataset->y_dptr + i);
+};
+
+void tensor_dataset_destroy(TensorDataset* dataset){
+    if (dataset == NULL) return;
+
+    
+    for (size_t i = 0; i < dataset->n_x; i++){
+        Tensor* X  = tensor_dataset_get_X(dataset, i);
+        Tensor* y = tensor_dataset_get_y(dataset, i);
+        
+        tensor_detach(X);
+        tensor_detach(y);
+
+        *(dataset->X_dptr + i) = NULL;
+        *(dataset->y_dptr + i) = NULL;
+    }
+
+    free(dataset->X_dptr);
+    free(dataset->y_dptr);
+    free(dataset);
+};
+
 #endif // __TENSOR_H__
