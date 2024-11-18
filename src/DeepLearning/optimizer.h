@@ -88,10 +88,10 @@ Adam_Optimizer* init_Adam_optimizer(const double lr, const double alpha, const d
                 FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 
                 //set rows and cols
-                optimizer->m_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 0.0);  
-                optimizer->v_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 0.0);
-                optimizer->m_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols, 0.0);
-                optimizer->v_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols,  0.0);
+                optimizer->m_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 1.0);  
+                optimizer->v_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 1.0);
+                optimizer->m_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols, 1.0);
+                optimizer->v_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols,  1.0);
 
                 break;
 

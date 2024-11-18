@@ -125,15 +125,10 @@ void forward_sequential_nn(Sequential_NN* model, Tensor* X){
     }
 };
 
-void sequential_nn_train(Sequential_NN* model, TensorDataset* dataset, ComputeGraph* graph,size_t epochs, Adam_Optimizer* optimizer){
+void sequential_nn_train(Sequential_NN* model, TensorDataset* dataset, size_t epochs, Adam_Optimizer* optimizer){
 
     if (model == NULL){
         printf("Model is pointing to NULL.\n");
-        exit(0);
-    }
-
-    if (graph == NULL){
-        printf("Graph is pointing to NULL.\n");
         exit(0);
     }
 
@@ -148,33 +143,67 @@ void sequential_nn_train(Sequential_NN* model, TensorDataset* dataset, ComputeGr
     }
 
     assert(dataset->n_x == dataset->n_y);
-
     
     for (size_t epoch = 0; epoch < epochs; epoch++){
         printf("Epoch: %lu\n", epoch);
         for (size_t i = 0; i < dataset->n_x; i++){
+            ComputeGraph* graph = compute_graph_new();
+            Tensor* _x = tensor_dataset_get_X(dataset, i);
+            if (_x == NULL){
+                printf("X is pointing to NULL.\n");
+                exit(0);
+            }
             
-            Tensor* X = tensor_dataset_get_X(dataset, i);
-            Tensor* _y = tensor_dataset_get_y(dataset, i);
+            Tensor* _y = tensor_dataset_get_y(dataset, i);            
+            if (_y == NULL){
+                printf("Y is pointing to NULL.\n");
+                exit(0);
+            }
+            
+            Tensor* x = tensor_copy(_x);
+            if (x == NULL){
+                printf("Failed to copy tensor x.\n");
+                exit(0);
+            }
 
-            Tensor* x = tensor_copy(X);
-            Tensor* y = tensor_copy(y);
+            Tensor* y = tensor_copy(_y);            
+            if (y == NULL){
+                printf("Failed to copy tensor y.\n");
+                exit(0);
+            }
+            
             printf("Forward Pass.\n");
             forward_sequential_nn(model, x);
-            printf("--------------------\n");
-            tensor_print_val(X);
-            printf("--------------------\n");
 
-            Tensor* loss = L2_loss_tensor(X, y);
+            if (x == NULL){
+                printf("X is pointing to NULL.\n");
+                exit(0);
+            }
+
+            Tensor* loss = L2_loss_tensor(x, y);
             printf("Loss: %f\n", tensor_get_val(loss, 0, 0));
-
+            printf("--------------------\n");
+            printf("Graph Num Nodes %lu\n", graph->num_nodes);
             graph_build(graph, loss->get_node(loss, 0, 0));
+            printf("--------------------\n");
+            printf("Graph Num Nodes %lu\n", graph->num_nodes);
+
             graph_propagate_back(graph);
 
             optimizer_step(optimizer, model->layers);
 
+            printf("Printing values of layer params.\n");
+            sequential_nn_print_params(model);
+
             tensor_detach(loss);
-            graph_prune(graph);
+            tensor_detach(x);
+            tensor_detach(y);
+
+            if (epoch != (epochs - 1) || i != (dataset->n_x - 1)) {
+                graph_prune(graph);
+
+            }   
+            
         }
     }
 };

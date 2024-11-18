@@ -49,6 +49,18 @@ Tensor* L2_loss_tensor(Tensor* prediction, Tensor* label){
     tensor_detach(diff_T);
     return loss;
 };
+
+Tensor* MSE_loss(Tensor* prediction, Tensor* label){
+    if (prediction->n_rows != label->n_rows || prediction->n_cols != label->n_cols){
+        printf("Tensor sizes do not match\n.");
+        exit(0);
+    }
+    Tensor* diff = tensor_subtract(prediction, label); 
+    Tensor  *loss = tensor_scalar_product(diff, 0.5);
+
+    tensor_detach(diff);
+    return loss;
+};
  
 void backward_L2_loss(Matrix* a_out, Matrix* y, Matrix** dC_da_out){
     if (a_out == NULL || y == NULL){

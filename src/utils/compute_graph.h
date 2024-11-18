@@ -38,11 +38,20 @@ void graph_prune(ComputeGraph* self){
     if (self){
         for (size_t i = 0; i < self->num_nodes; i++){
             ADNode* node = self->nodes[i];
-            if (node->is_trainable) continue;
-            node->destroy(node);
+            if (node->is_trainable) {
+                node->visited = 0;
+                continue;
+            };
+            node_destroy(node);
+            self->nodes[i] = NULL;
         }
+        
         free(self->nodes);
+        self->nodes = NULL;
+        free(self);
     }
+    
+    
 };
 
 void graph_destroy(ComputeGraph* self){
@@ -51,7 +60,6 @@ void graph_destroy(ComputeGraph* self){
             ADNode* node = self->nodes[i];
             node->destroy(node);
             self->nodes[i] = NULL;
-
         }
         
         free(self->nodes);
@@ -237,6 +245,10 @@ void graph_build(ComputeGraph* graph, ADNode* output){
     if (output == NULL){
         printf("Output Node is NULL\n");
         return;
+    }
+
+    if (graph->nodes == NULL){
+        graph->nodes = (ADNode**)malloc(graph->capacity * sizeof(ADNode*));
     }
 
 

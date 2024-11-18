@@ -43,7 +43,7 @@ void main(void){
 
     printf("Model Params: %lu\n", model->num_params);
 
-    sequential_nn_train(model, dataset, graph, 100, optimizer);
+    sequential_nn_train(model, dataset, 5, optimizer);
 
     /* printf("Forward Pass.\n");
     forward_sequential_nn(model, X);
@@ -80,4 +80,5 @@ void main(void){
     graph_destroy(graph);
     destroy_adam(optimizer);
     tensor_dataset_destroy(dataset);
+    printf("Done.\n");
 };
