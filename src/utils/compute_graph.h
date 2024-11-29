@@ -278,6 +278,7 @@ ComputeGraph* compute_graph_new(){
 
     return graph; 
 };
+
 #pragma endregion Computation Graph
 
 #endif //  __COMPUTE_GRAPH_H__

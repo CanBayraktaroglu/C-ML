@@ -149,6 +149,7 @@ void sequential_nn_train(Sequential_NN* model, TensorDataset* dataset, size_t ep
         for (size_t i = 0; i < dataset->n_x; i++){
             ComputeGraph* graph = compute_graph_new();
             Tensor* _x = tensor_dataset_get_X(dataset, i);
+            
             if (_x == NULL){
                 printf("X is pointing to NULL.\n");
                 exit(0);
@@ -302,6 +303,7 @@ void add_feed_forward_layer_(Sequential_NN_* model_ptr, size_t output_size, size
         printf("Layer ptr points to NULL.\n Feed forward layer cannot be added.\n");
         exit(0);
     } 
+    
     init_feed_forward_layer_(&layer_ptr, output_size, input_size, act_fn_mapping);
 };
 

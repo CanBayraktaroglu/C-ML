@@ -88,10 +88,10 @@ Adam_Optimizer* init_Adam_optimizer(const double lr, const double alpha, const d
                 FeedForwardLayer* ff_layer_ptr = layer_ptr->layer.ff_layer;
                 
                 //set rows and cols
-                optimizer->m_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 1.0);  
-                optimizer->v_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 1.0);
-                optimizer->m_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols, 1.0);
-                optimizer->v_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols,  1.0);
+                optimizer->m_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 0.0);  
+                optimizer->v_w_ptr[i] = tensor_new_init(ff_layer_ptr->weights->n_rows, ff_layer_ptr->weights->n_cols, 0.0);
+                optimizer->m_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols, 0.0);
+                optimizer->v_b_ptr[i] = tensor_new_init(ff_layer_ptr->biases->n_rows, ff_layer_ptr->biases->n_cols,  0.0);
 
                 break;
 
@@ -161,7 +161,7 @@ void optimizer_step(Adam_Optimizer* optimizer, Layer** layers){
                                 m_dach_t = m_t/(1 - pow(optimizer->beta_1, t));
     
                             // v_bb n
-                                v_t_prev = tensor_get_val(optimizer->v_b_ptr[i], j, 0);//matrix_get(optimizer->v_b_ptr, j, 0);
+                                v_t_prev = tensor_get_val(optimizer->v_b_ptr[i], j, 0); //matrix_get(optimizer->v_b_ptr, j, 0);
                                 
                                 // Calculate value of v_t+1 and update v_t
                                 v_t = optimizer->beta_2 * v_t_prev + (1 - optimizer->beta_2) * pow(grad_b_j_t, 2); // [delta_W[i][t]]^2

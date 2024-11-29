@@ -211,7 +211,7 @@ void tensor_transpose_inplace(Tensor* self){
         }
     }
     
-    temp->destroy(temp);        
+    free(temp);        
 };
 
 Tensor* tensor_transpose(Tensor* self){
@@ -220,7 +220,7 @@ Tensor* tensor_transpose(Tensor* self){
     for(size_t i = 0; i < self->n_rows; i++){
         for(size_t j = 0; j < self->n_cols; j++){
             ADNode* source = self->get_node(self, i, j); // iter cols
-            temp->set_node(temp, source, j,i);
+            temp->set_node(temp, source, j, i);
         }
     }
 

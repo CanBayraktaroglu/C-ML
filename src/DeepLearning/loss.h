@@ -9,6 +9,11 @@
 #include "tensor.h"
 
 
+typedef struct MSE_Loss{
+    size_t num_samples;
+    double loss;
+}MSE_Loss;
+
 #pragma region Loss Functions
 
 
@@ -50,16 +55,40 @@ Tensor* L2_loss_tensor(Tensor* prediction, Tensor* label){
     return loss;
 };
 
-Tensor* MSE_loss(Tensor* prediction, Tensor* label){
+MSE_Loss MSE_loss_new(){
+    MSE_Loss mse_loss = {.loss=0.0, .num_samples = 0};  
+    return mse_loss;
+};
+
+void MSE_loss(MSE_Loss* mse_loss, Tensor* prediction, Tensor* label){
     if (prediction->n_rows != label->n_rows || prediction->n_cols != label->n_cols){
         printf("Tensor sizes do not match\n.");
         exit(0);
     }
-    Tensor* diff = tensor_subtract(prediction, label); 
-    Tensor  *loss = tensor_scalar_product(diff, 0.5);
 
-    tensor_detach(diff);
-    return loss;
+    if (mse_loss == NULL){
+        printf("Provided MSE is NULL\n.");
+        return;
+    }
+        
+    double prev_loss = mse_loss->loss * mse_loss->num_samples;
+    mse_loss->num_samples++;
+    Tensor* prev_loss_tensor = tensor_new_init(1, 1, prev_loss);
+
+    tensor_subtract_inplace(prediction, label);
+    Tensor* diff_T = tensor_transpose(prediction);
+    tensor_dot_product_reversed_order_inplace(prediction, diff_T);
+
+    tensor_add_inplace(prediction, prev_loss_tensor);
+
+    tensor_scalar_product_inplace(prediction, 1.0 / mse_loss->num_samples);
+
+    mse_loss->loss = tensor_get_val(prediction, 0, 0);
+
+    tensor_detach(prev_loss_tensor);
+    tensor_detach(diff_T);
+    
+
 };
  
 void backward_L2_loss(Matrix* a_out, Matrix* y, Matrix** dC_da_out){

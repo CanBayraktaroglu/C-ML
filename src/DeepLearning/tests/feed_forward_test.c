@@ -43,7 +43,7 @@ void main(void){
 
     printf("Model Params: %lu\n", model->num_params);
 
-    sequential_nn_train(model, dataset, 5, optimizer);
+    sequential_nn_train(model, dataset, 2, optimizer);
 
     /* printf("Forward Pass.\n");
     forward_sequential_nn(model, X);
