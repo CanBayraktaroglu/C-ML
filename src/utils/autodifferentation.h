@@ -271,6 +271,4 @@ void node_init(ADNode* self){
     self->copy = node_copy;
 };
 
-#pragma region Computation Graph
-
 #endif // AUTODIFF_H

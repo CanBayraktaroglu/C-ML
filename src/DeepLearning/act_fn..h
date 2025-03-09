@@ -1,5 +1,5 @@
 #ifndef ACT_FN_H_
-#define ACT_FN_H
+#define ACT_FN_H_
 
 #include <stdlib.h>	
 #include <string.h>

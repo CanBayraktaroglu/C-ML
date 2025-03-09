@@ -3,7 +3,7 @@
 #include "loss.h"
 
 void main(void){
-    ComputeGraph* compute_graph = graph_new();
+    ComputeGraph* compute_graph = compute_graph_new();
 
     double arr_1[4][1] = {
         {1.0},
