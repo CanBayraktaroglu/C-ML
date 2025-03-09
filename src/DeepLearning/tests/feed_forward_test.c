@@ -28,8 +28,8 @@ void main(void){
     Tensor* y = tensor_create_from_array(1, 1, arr_2);
 
     //printf("Initializing Feed Forward Layer.\n");
-    add_feed_forward_layer(model, 200000, 4, tensor_relu_inplace);
-    add_feed_forward_layer(model, 1, 200000, tensor_relu_inplace);
+    add_feed_forward_layer(model, 20000, 4, tensor_relu_inplace);
+    add_feed_forward_layer(model, 1, 20000, tensor_relu_inplace);
 
     // Initialize optimizer
     Adam_Optimizer* optimizer = init_Adam_optimizer(0.004f, 0.5f, 0.9f, 0.9f, 0.000001f, model->layers, model->num_layers);

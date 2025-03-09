@@ -25,7 +25,7 @@ typedef struct FeedForwardLayer{
 
     Tensor* weights;
     Tensor* biases;
-    void (*act_fn)(Tensor* X);
+    void (*act_fn)(Tensor* X, ParameterType resulting_node_type);
 
     // Methods
     void (*forward)(struct Layer* layer, Tensor* X);
@@ -60,9 +60,9 @@ void feed_forward_layer_forward(Layer* layer, Tensor* X){
     }
     FeedForwardLayer* ff_layer = layer->layer.ff_layer;
     
-    tensor_dot_product_reversed_order_inplace(X, ff_layer->weights);
-    tensor_add_inplace(X, ff_layer->biases); 
-    ff_layer->act_fn(X);
+    tensor_dot_product_reversed_order_inplace(X, ff_layer->weights, PRE_ACTIVATION);
+    tensor_add_inplace(X, ff_layer->biases, LAYER_OUTPUT); 
+    ff_layer->act_fn(X, POST_ACTIVATION);
 };
 
 void feed_forward_layer_destroy(Layer* layer){
@@ -100,7 +100,7 @@ void feed_forward_initialize_params_random(Tensor* tensor){
     }
 };
 
-Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
+Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X, ParameterType type)){
     Layer* layer = (Layer*)malloc(sizeof(Layer));    
     FeedForwardLayer* ff_layer = (FeedForwardLayer*)malloc(sizeof(FeedForwardLayer));
 
@@ -109,8 +109,8 @@ Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_f
         return NULL;
     };
 
-    ff_layer->weights = tensor_new_random(n_neurons, n_features);
-    ff_layer->biases = tensor_new_random(n_neurons, 1);
+    ff_layer->weights = tensor_new_random(n_neurons, n_features, WEIGHT);
+    ff_layer->biases = tensor_new_random(n_neurons, 1, BIAS);
 
     // Set the nodes as trainable
     for(size_t i = 0; i < n_neurons; i++){
@@ -138,7 +138,7 @@ Layer* init_feed_forward_layer(size_t n_neurons, size_t n_features, void (*act_f
 };
 
 
-Layer* init_layer(LayerType type, size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X)){
+Layer* init_layer(LayerType type, size_t n_neurons, size_t n_features, void (*act_fn)(Tensor* X, ParameterType resulting_node_type)){
 
     Layer* layer;
     switch(type){

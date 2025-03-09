@@ -26,7 +26,7 @@ Sequential_NN* init_sequential_nn(){
     return model;
 };
 
-void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t input_size, void (*act_fn)(Tensor* X)){
+void add_feed_forward_layer(Sequential_NN* model, size_t output_size, size_t input_size, void (*act_fn)(Tensor* X, ParameterType resulting_node_type)){
     if (model == NULL){
         printf("Passed model pointer is NULL.\n");
         exit(0);

@@ -7,6 +7,24 @@
 #include "string.h"
 
 // Core data structure for storing value and derivative
+
+typedef enum ParameterType{
+    DEFAULT,
+    WEIGHT,
+    BIAS,
+    PRE_ACTIVATION,
+    POST_ACTIVATION,
+    LAYER_OUTPUT,
+    LOSS,
+    INPUT,
+    OUTPUT
+}ParameterType;
+
+typedef union TopologyIndex{
+    size_t weight_idx;
+    size_t bias_idx;
+}TopologyIndex;
+
 typedef struct {
     double value;
     double grad;
@@ -17,8 +35,10 @@ typedef struct ADNode {
     struct ADNode* self;
     struct ADNode** parents;
     Dual data;
+    ParameterType type;
     size_t num_parents;
-    size_t topology_idx;
+    size_t idx;
+    TopologyIndex topology_idx;
     char visited;
     char is_trainable;
     int depth;
@@ -47,12 +67,12 @@ typedef struct ADNode {
 
 void node_init(ADNode* self);
 
-ADNode* node_new(const double value, const size_t num_parents, char is_trainable){
+ADNode* node_new(const double value, const size_t num_parents, char is_trainable, ParameterType type){
     ADNode* node = (ADNode*)malloc(sizeof(ADNode));
     node->data.value = value;
     node->data.grad = 0.0;
     node->num_parents = num_parents;
-    
+    node->type = type;
     if (num_parents > 0) {
         node->parents = (ADNode**)malloc(num_parents * sizeof(ADNode*));
     } else {
@@ -74,7 +94,7 @@ ADNode* node_copy(ADNode* self){
         return NULL;
     }
 
-    ADNode* node = node_new(self->data.value, self->num_parents, self->is_trainable); 
+    ADNode* node = node_new(self->data.value, self->num_parents, self->is_trainable, self->type); 
     
     if (node == NULL){
         printf("Failed to allocate memory for AD Node.\n");
@@ -198,9 +218,9 @@ static double node_get_grad(ADNode* self){
     return self->data.grad;
 }
 
-ADNode* node_add(ADNode* self, ADNode* node){
+ADNode* node_add(ADNode* self, ADNode* node, ParameterType resulting_node_type){
 
-    ADNode* result = node_new(self->get_val(self) + node->get_val(node), 2, 0);
+    ADNode* result = node_new(self->get_val(self) + node->get_val(node), 2, 0, resulting_node_type);
 
     result->parents[0] = self;
     result->parents[1] = node;
@@ -208,8 +228,9 @@ ADNode* node_add(ADNode* self, ADNode* node){
     return result;
 };
 
-ADNode* node_multiply(ADNode* self, ADNode* node){
-    ADNode* result = node_new(self->get_val(self) * node->get_val(node), 2, 0);
+ADNode* node_multiply(ADNode* self, ADNode* node, ParameterType resulting_node_type){
+
+    ADNode* result = node_new(self->get_val(self) * node->get_val(node), 2, 0, resulting_node_type);
 
     result->parents[0] = self;
     result->parents[1] = node;
@@ -217,43 +238,49 @@ ADNode* node_multiply(ADNode* self, ADNode* node){
     return result;
 };
 
-ADNode* node_sqrt(ADNode* self){
-    ADNode* result = node_new(sqrt(self->get_val(self)), 1, 0);
+ADNode* node_sqrt(ADNode* self, ParameterType resulting_node_type){
+
+    ADNode* result = node_new(sqrt(self->get_val(self)), 1, 0, resulting_node_type);
     result->parents[0] = self;
     result->backward = backward_sqrt;
     return result;
 };
 
-ADNode* node_exp(ADNode* self){
-    ADNode* result = node_new(exp(self->get_val(self)), 1, 0);
+ADNode* node_exp(ADNode* self, ParameterType resulting_node_type){
+
+    ADNode* result = node_new(exp(self->get_val(self)), 1, 0, resulting_node_type);
     result->parents[0] = self;
     result->backward = backward_exp;
     return result;
 };
 
-ADNode* node_log(ADNode* self){
-    ADNode* result = node_new(log(self->get_val(self)), 1, 0);
+ADNode* node_log(ADNode* self, ParameterType resulting_node_type){
+
+    ADNode* result = node_new(log(self->get_val(self)), 1, 0, resulting_node_type);
     result->parents[0] = self;
     result->backward = backward_log;
     return result;
 };
 
-ADNode* node_sigmoid(ADNode* self){
-    ADNode* result = node_new(1/(1 + exp(-self->get_val(self))), 1, 0);
+ADNode* node_sigmoid(ADNode* self, ParameterType resulting_node_type){
+
+    ADNode* result = node_new(1/(1 + exp(-self->get_val(self))), 1, 0, resulting_node_type);
     result->parents[0] = self;
     result->backward = backward_sigmoid;
     return result;
 };
 
-ADNode* node_tanh(ADNode* self){
-    ADNode* result = node_new(tanh(self->get_val(self)), 1, 0);
+ADNode* node_tanh(ADNode* self, ParameterType resulting_node_type){
+
+    ADNode* result = node_new(tanh(self->get_val(self)), 1, 0, resulting_node_type);
     result->parents[0] = self;
     result->backward = backward_tanh;
     return result;
 };
 
-ADNode* node_subtract(ADNode* self, ADNode* node){
-    ADNode* result = node_new(self->get_val(self) - node->get_val(node), 2, 0);
+ADNode* node_subtract(ADNode* self, ADNode* node, ParameterType resulting_node_type){
+
+    ADNode* result = node_new(self->get_val(self) - node->get_val(node), 2, 0, resulting_node_type);
     result->parents[0] = self;
     result->parents[1] = node;
     result->backward = backward_subtract;
